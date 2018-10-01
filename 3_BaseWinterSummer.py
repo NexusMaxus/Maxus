@@ -37,22 +37,21 @@ def harvest_constraint(m, i, c, g, y, t):
     elif y!=m.y.first() and g=='gsA':
         return m.F_har[i,c,g,y,t] == (sum(m.Fg[i, c, g, y-1, x] for x in range(m.t_seed[c, g, t], 13)) + sum(m.Fg[i, c, g, y, x] for x in range(1, m.t_seed[c, g, t])))\
            * m.t_harvest[c,g,t]
-    elif g=='gsB':
+    else:
         return m.F_har[i,c,g,y,t] == sum(m.Fg[i, c, g, y, x] for x in range(m.t_seed[c, g, t], t+1)) * m.t_harvest[c,g,t]
 
         #(m.t_seed[c, g, t] - t)
 def land_constraint(m,i,y,t):
     return sum(sum(m.Fg[i,c,g,y,t]* m.L_req_Fg[i,c,g] for c in m.c) for g in m.g ) <= m.L_Agr[i]
 def growthseason_constraint(m,i,c,g,y, t):
-    if g=='gsB':
-        return m.Fg[i,c,g,y,t] == m.GS[c,g,t]*m.Fg[i,c,g,y,m.t_seedmonth[c,g]]
-    elif g=='gsA' and t< m.t_seedmonth[c,g] and y!=m.y.first():
+    if g=='gsA' and t< m.t_seedmonth[c,g] and y!=m.y.first():
         return m.Fg[i,c,g,y,t] == m.GS[c,g,t]*m.Fg[i,c,g,y-1,m.t_seedmonth[c,g]]
     elif g=='gsA' and t< m.t_seedmonth[c,g] and y==m.y.first():
         return Constraint.Skip
     elif g=='gsA' and t>= m.t_seedmonth[c,g]:
         return m.Fg[i,c,g,y,t] == m.GS[c,g,t]*m.Fg[i,c,g,y,m.t_seedmonth[c,g]]
-
+    else:
+        return m.Fg[i,c,g,y,t] == m.GS[c,g,t]*m.Fg[i,c,g,y,m.t_seedmonth[c,g]]
 
 
 
