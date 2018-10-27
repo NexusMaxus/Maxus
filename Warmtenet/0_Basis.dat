@@ -1,0 +1,11 @@
+param B := 1;
+param H := 1;
+
+set w := LT MT HT;
+
+param WV :=
+LT 1 100
+MT 1 200
+HT 1 300;
+
+param PKhuis :=
