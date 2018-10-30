@@ -1,11 +1,39 @@
-param B := 1;
-param H := 1;
+param B := 2;
+param H := 2;
 
 set w := LT MT HT;
 
 param WV :=
 LT 1 100
 MT 1 200
-HT 1 300;
+HT 1 300
+LT 2 100
+MT 2 200
+HT 2 300;
 
 param PKhuis :=
+LT 1 10
+MT 1 20
+HT 1 30
+LT 2 10
+MT 2 20
+HT 2 30;
+
+param T_in := 60;
+param T_uit := 28;
+param Ef := 0.07;
+param U := 3;
+param ro := 1;
+param sw := 4.18;
+
+param C_bron := 10;
+param C_e := 20;
+param C_h :=
+LT 1 1500
+MT 1 1200
+HT 1 1000
+LT 2 1000
+MT 2 500
+HT 2 200;
+param C_b := 200;
+
