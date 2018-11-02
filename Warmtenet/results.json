@@ -1,0 +1,90 @@
+{
+    "Problem": [
+        {
+            "Lower bound": -Infinity,
+            "Number of constraints": 16,
+            "Number of objectives": 1,
+            "Number of variables": 20,
+            "Sense": "unknown",
+            "Upper bound": Infinity
+        }
+    ],
+    "Solution": [
+        {
+            "number of solutions": 1,
+            "number of solutions displayed": 1
+        },
+        {
+            "Constraint": "No values",
+            "Gap": null,
+            "Message": "Ipopt 3.11.1\\x3a Optimal Solution Found",
+            "Objective": {
+                "OBJ": {
+                    "Value": 2624.9202505429585
+                }
+            },
+            "Problem": {},
+            "Status": "optimal",
+            "Variable": {
+                "A[1]": {
+                    "Value": 0.04984051036707912
+                },
+                "A[2]": {
+                    "Value": 0.07476076629630887
+                },
+                "CostEnergy": {
+                    "Value": 700.0000041927808
+                },
+                "CostHouses": {
+                    "Value": 1399.999988022657
+                },
+                "CostSource": {
+                    "Value": 500.0000029948434
+                },
+                "CostTubes": {
+                    "Value": 24.9202553326776
+                },
+                "E_use[1]": {
+                    "Value": 14.000000000071056
+                },
+                "E_use[2]": {
+                    "Value": 21.000000209567983
+                },
+                "PK_bron": {
+                    "Value": 50.000000299484334
+                },
+                "Q[1]": {
+                    "Value": 0.14952153110123736
+                },
+                "Q[2]": {
+                    "Value": 0.22428229888892665
+                },
+                "Q_h[1]": {
+                    "Value": 0.14952153110123736
+                },
+                "Q_h[2]": {
+                    "Value": 0.22428229888892665
+                },
+                "T_uit_tot": {
+                    "Value": 28.0
+                },
+                "Type[HT,2]": {
+                    "Value": 1.0000000199463657
+                },
+                "Type[MT,1]": {
+                    "Value": 1.0000000198987449
+                }
+            }
+        }
+    ],
+    "Solver": [
+        {
+            "Error rc": 0,
+            "Id": 0,
+            "Message": "Ipopt 3.11.1\\x3a Optimal Solution Found",
+            "Status": "ok",
+            "Termination condition": "optimal",
+            "Time": 0.06900835037231445
+        }
+    ]
+}
