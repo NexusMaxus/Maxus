@@ -27,6 +27,7 @@ m.U = Param(within=NonNegativeReals) #stroomsnelheid | flow velocity
 m.ro = Param(within=NonNegativeReals) #dichtheid | density
 m.sw = Param(within=NonNegativeReals) # ...  | soortelijke warmte
 
+m.Link_b=Param(m.b,m.b,within=NonNegativeIntegers)
 
 
 m.Con_pos = Param(within=NonNegativeIntegers)
@@ -40,7 +41,7 @@ m.C_b = Param(within=NonNegativeReals)
 
 
 
-m.load('0_basis.dat')
+m.load('1_network.dat')
 
 #variables
 m.Const_b= Var(m.b, domain=NonNegativeIntegers)
@@ -100,9 +101,16 @@ def Q_Con(m,h):  #11
     return m.Q[h] == m.Q_h[h]
 
 def Q_source_Con(m):
-    return sum(m.Q[b] for b in m.b) * (m.T_in - m.T_source_in) == \
+    return m.Q[5] * (m.T_in - m.T_source_in) == \
                      m.Q_source * (m.T_source_in-m.T_source_out)
 
+def pipes_connection_Con(m,b):
+    if (b > m.H) and (b < m.B):
+        return sum(m.Q[b2]* m.Link_b[b2,b] for b2 in m.b) == sum(m.Q[b]*m.Link_b[b,b2] for b2 in m.b)
+    elif b==m.B:
+        return m.Q[b] == sum(m.Q[b2]* m.Link_b[b2,b] for b2 in m.b)
+    else:
+        return Constraint.Skip
 
 def Source_Con(m): #12
     return m.PK_bron == m.Q_source * (m.ro * m.sw * (m.T_source_in - m.T_source_out))
@@ -121,8 +129,9 @@ m.CostEnergyConstraint = Constraint( rule=CostEnergy_Con) #2
 m.CostTubesConstraint = Constraint(rule=CostTubes_Con) #6
 m.CostHousesConstraint = Constraint(rule=CostHouses_Con) #9
 
-m.Q_sourceConstraint = Constraint(rule=Q_source_Con)
+m.PipesConstraint = Constraint(m.b, rule=pipes_connection_Con)
 m.Q_Constraint = Constraint(m.h, rule = Q_Con)
+m.Q_sourceConstraint = Constraint(rule=Q_source_Con)
 m.SourceConstrant = Constraint(rule=Source_Con)
 m.CostSourceConstraint = Constraint(rule=Cost_Source_Con)
 
@@ -137,30 +146,4 @@ if __name__ == '__main__':
     results = opt.solve(instance)
     m.solutions.store_to(results)
     results.write()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

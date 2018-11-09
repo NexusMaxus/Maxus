@@ -27,6 +27,8 @@ m.U = Param(within=NonNegativeReals) #stroomsnelheid | flow velocity
 m.ro = Param(within=NonNegativeReals) #dichtheid | density
 m.sw = Param(within=NonNegativeReals) # ...  | soortelijke warmte
 
+m.Link_pos_b=Param(m.b,m.b,within=NonNegativeIntegers)
+
 
 
 m.Con_pos = Param(within=NonNegativeIntegers)
@@ -40,7 +42,7 @@ m.C_b = Param(within=NonNegativeReals)
 
 
 
-m.load('0_basis.dat')
+m.load('2_network.dat')
 
 #variables
 m.Const_b= Var(m.b, domain=NonNegativeIntegers)
@@ -51,6 +53,8 @@ m.E_use = Var(m.h, domain = NonNegativeReals)
 m.Type = Var(m.w, m.h, domain = NonNegativeIntegers, bounds=(-1,2))
 m.Q_h = Var(m.h, domain=NonNegativeReals)
 m.Q_source = Var( domain=NonNegativeReals)
+m.Link_b=Var(m.b,m.b,domain=NonNegativeIntegers)
+
 
 #variables: cost
 m.CostTubes = Var(domain=NonNegativeReals)
@@ -96,13 +100,41 @@ def Power_Con(m,h):  #4
 def Type_Con(m,h):  #5
     return sum(m.Type[w,h] for w in m.w) == 1
 
-def Q_Con(m,h):  #11
-    return m.Q[h] == m.Q_h[h]
-
 def Q_source_Con(m):
-    return sum(m.Q[b] for b in m.b) * (m.T_in - m.T_source_in) == \
+    return m.Q[5] * (m.T_in - m.T_source_in) == \
                      m.Q_source * (m.T_source_in-m.T_source_out)
 
+def pipes_connection_Con(m,b):
+    if (b > m.H) and (b < m.B):
+        return sum(m.Q[b2]* m.Link_b[b2,b] for b2 in m.b) == sum(m.Q[b]*m.Link_b[b,b2] for b2 in m.b)
+    elif b==m.B:
+        return m.Q[b] == sum(m.Q[b2]* m.Link_b[b2,b] for b2 in m.b)
+    elif b <= m.H:
+        return sum(m.Q[b]* m.Link_b[b,b2] for b2 in m.b) == m.Q_h[b]
+
+def pipe_sum_con(m,b):
+    if b < m.B:
+        return sum(m.Link_b[b,b2] for b2 in m.b) == 1
+    else:
+        return Constraint.Skip
+
+def pipes_construction_Con(m,b,b2):
+    return m.Link_b[b2,b] <= m.Link_pos_b[b2,b]
+
+def water_balance_con(m):
+    return m.Q[5] == sum(m.Q_h[h] for h in m.h)
+
+def one_direction_con(m,b):
+    if b < m.B:
+        return prod((1-m.Link_b[b,b2]) for b2 in m.b)  == 0;
+    else:
+        return Constraint.Skip
+
+def one_direction_con2(m,b,b2):
+    if (b < m.B) and (b != b2):
+        return m.Link_b[b,b2] * m.Link_b[b2,b]  == 0;
+    else:
+        return Constraint.Skip
 
 def Source_Con(m): #12
     return m.PK_bron == m.Q_source * (m.ro * m.sw * (m.T_source_in - m.T_source_out))
@@ -116,13 +148,17 @@ m.DischargeConstraint = Constraint( m.b, rule=Discharge_Con) #3
 m.PowerConstraint = Constraint( m.h, rule=Power_Con) #4
 m.TypeConstraint = Constraint( m.h, rule=Type_Con) #5
 
-
+m.pipesumConstraint = Constraint(m.b, rule=pipe_sum_con)
 m.CostEnergyConstraint = Constraint( rule=CostEnergy_Con) #2
 m.CostTubesConstraint = Constraint(rule=CostTubes_Con) #6
 m.CostHousesConstraint = Constraint(rule=CostHouses_Con) #9
 
+m.onedirectionConstraint = Constraint(m.b,rule= one_direction_con)
+m.onedirectionConstraint2 = Constraint(m.b,m.b,rule= one_direction_con2)
+m.waterbalanceConstraint = Constraint(rule = water_balance_con)
+m.PipesConstructionConstraint= Constraint(m.b,m.b, rule=pipes_construction_Con)
+m.PipesConstraint = Constraint(m.b, rule=pipes_connection_Con)
 m.Q_sourceConstraint = Constraint(rule=Q_source_Con)
-m.Q_Constraint = Constraint(m.h, rule = Q_Con)
 m.SourceConstrant = Constraint(rule=Source_Con)
 m.CostSourceConstraint = Constraint(rule=Cost_Source_Con)
 
@@ -137,30 +173,4 @@ if __name__ == '__main__':
     results = opt.solve(instance)
     m.solutions.store_to(results)
     results.write()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

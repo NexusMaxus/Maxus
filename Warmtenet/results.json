@@ -2,9 +2,9 @@
     "Problem": [
         {
             "Lower bound": -Infinity,
-            "Number of constraints": 16,
+            "Number of constraints": 72,
             "Number of objectives": 1,
-            "Number of variables": 20,
+            "Number of variables": 51,
             "Sense": "unknown",
             "Upper bound": Infinity
         }
@@ -17,62 +17,92 @@
         {
             "Constraint": "No values",
             "Gap": null,
-            "Message": "Ipopt 3.11.1\\x3a Optimal Solution Found",
+            "Message": "Ipopt 3.11.1\\x3a Solved To Acceptable Level.",
             "Objective": {
                 "OBJ": {
-                    "Value": 2624.9202505429585
+                    "Value": 3166.092491581388
                 }
             },
             "Problem": {},
             "Status": "optimal",
             "Variable": {
                 "A[1]": {
-                    "Value": 0.04984051036707912
+                    "Value": 0.0797448154796665
                 },
                 "A[2]": {
-                    "Value": 0.07476076629630887
+                    "Value": 0.1063264240207859
+                },
+                "A[3]": {
+                    "Value": 0.0797448125114166
+                },
+                "A[4]": {
+                    "Value": 0.1860712388802372
+                },
+                "A[5]": {
+                    "Value": 0.18607123688663146
                 },
                 "CostEnergy": {
-                    "Value": 700.0000041927808
+                    "Value": 419.999995800317
                 },
                 "CostHouses": {
-                    "Value": 1399.999988022657
+                    "Value": 1800.0000010021527
                 },
                 "CostSource": {
-                    "Value": 500.0000029948434
+                    "Value": 933.3333242233433
                 },
                 "CostTubes": {
-                    "Value": 24.9202553326776
+                    "Value": 12.759170555574753
                 },
                 "E_use[1]": {
-                    "Value": 14.000000000071056
+                    "Value": 6.999999790028514
                 },
                 "E_use[2]": {
-                    "Value": 21.000000209567983
+                    "Value": 13.999999999987335
+                },
+                "Link_b[1,3]": {
+                    "Value": 1.0000000166664578
+                },
+                "Link_b[2,4]": {
+                    "Value": 1.0000000166664307
+                },
+                "Link_b[3,4]": {
+                    "Value": 1.0000000166666385
+                },
+                "Link_b[4,5]": {
+                    "Value": 1.000000016666448
                 },
                 "PK_bron": {
-                    "Value": 50.000000299484334
+                    "Value": 93.33333242233432
                 },
                 "Q[1]": {
-                    "Value": 0.14952153110123736
+                    "Value": 0.2392344464389995
                 },
                 "Q[2]": {
-                    "Value": 0.22428229888892665
+                    "Value": 0.3189792720623577
+                },
+                "Q[3]": {
+                    "Value": 0.2392344375342498
+                },
+                "Q[4]": {
+                    "Value": 0.5582137166407115
+                },
+                "Q[5]": {
+                    "Value": 0.5582137106598943
                 },
                 "Q_h[1]": {
-                    "Value": 0.14952153110123736
+                    "Value": 0.23923444258470647
                 },
                 "Q_h[2]": {
-                    "Value": 0.22428229888892665
+                    "Value": 0.31897926634739876
                 },
-                "T_uit_tot": {
-                    "Value": 28.0
+                "Q_source": {
+                    "Value": 2.2328548426395773
                 },
-                "Type[HT,2]": {
-                    "Value": 1.0000000199463657
+                "Type[LT,1]": {
+                    "Value": 1.000000019996945
                 },
-                "Type[MT,1]": {
-                    "Value": 1.0000000198987449
+                "Type[MT,2]": {
+                    "Value": 1.00000001998164
                 }
             }
         }
@@ -80,11 +110,11 @@
     "Solver": [
         {
             "Error rc": 0,
-            "Id": 0,
-            "Message": "Ipopt 3.11.1\\x3a Optimal Solution Found",
+            "Id": 1,
+            "Message": "Ipopt 3.11.1\\x3a Solved To Acceptable Level.",
             "Status": "ok",
             "Termination condition": "optimal",
-            "Time": 0.06900835037231445
+            "Time": 0.14061594009399414
         }
     ]
 }
