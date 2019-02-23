@@ -78,6 +78,7 @@ buildings_csv.sort_values(by='identifica', inplace=True)
 buildings_csv.reset_index(drop=True, inplace=True)
 
 
+
 buildings = buildings.join(buildings_csv, lsuffix='l')
 buildings.drop(['identifical', 'bouwjaarl', 'statusl', 'gebruiksdol', 'oppervlaktl'], axis=1)
 
