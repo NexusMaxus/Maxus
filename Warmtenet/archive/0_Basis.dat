@@ -31,13 +31,13 @@ param U := 3;
 param ro := 1;
 param sw := 4.18;
 
-param C_bron := 10;
-param C_e := 20;
+param C_bron := 5;
+param C_e := 10;
 param C_h :=
 LT 1 1300
 MT 1 1200
-HT 1 1100
+HT 1 500
 LT 2 1000
 MT 2 500
 HT 2 200;
-param C_b := 200;
+param C_b := 20;

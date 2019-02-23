@@ -42,8 +42,6 @@ m.C_b = Param(within=NonNegativeReals)
 
 
 
-m.load('2_network.dat')
-
 #variables
 m.Const_b= Var(m.b, domain=NonNegativeIntegers)
 m.A = Var(m.b, domain=NonNegativeReals)
@@ -114,7 +112,7 @@ def pipes_connection_Con(m,b):
 
 def pipe_sum_con(m,b):
     if b < m.B:
-        return sum(m.Link_b[b,b2] for b2 in m.b) == 1
+        return sum(m.Link_b[b,b2] for b2 in m.b) <= 1
     else:
         return Constraint.Skip
 
@@ -122,7 +120,7 @@ def pipes_construction_Con(m,b,b2):
     return m.Link_b[b2,b] <= m.Link_pos_b[b2,b]
 
 def water_balance_con(m):
-    return m.Q[5] == sum(m.Q_h[h] for h in m.h)
+    return m.Q[m.B] == sum(m.Q_h[h] for h in m.h)
 
 def one_direction_con(m,b):
     if b < m.B:
