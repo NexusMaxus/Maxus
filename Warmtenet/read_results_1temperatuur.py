@@ -4,10 +4,13 @@ import json
 import numpy as np
 import matplotlib.pyplot as plt
 
-
-points = gpd.read_file(r'C:\Users\Rogier\OneDrive\Warmtenet\All_Points_copy.shp')
-roads = gpd.read_file(r'C:\Users\Rogier\OneDrive\Warmtenet\assen_test\wegen_wijk.shp')
-buildings = gpd.read_file(r'C:\Users\Rogier\OneDrive\Warmtenet\assen_test\shape\buildings.shp')
+points = gpd.read_file('/home/rogier/earlybirds/assen_test/AllPoints.shp')
+roads = gpd.read_file(r'/home/rogier/earlybirds/assen_test/wegen_wijk.shp')
+buildings = gpd.read_file(r'/home/rogier/earlybirds/assen_test/shape/buildings.shp')
+#
+# points = gpd.read_file(r'C:\Users\Rogier\OneDrive\Warmtenet\All_Points_copy.shp')
+# roads = gpd.read_file(r'C:\Users\Rogier\OneDrive\Warmtenet\assen_test\wegen_wijk.shp')
+# buildings = gpd.read_file(r'C:\Users\Rogier\OneDrive\Warmtenet\assen_test\shape\buildings.shp')
 
 X = len(points) - 1
 H = len(buildings) - 1
@@ -40,11 +43,11 @@ for road in roads.geometry:
 
 
 # read file
-# with open('results_9_1temperatuur_wijk.json', 'r') as myfile:
-#     data=myfile.read()
-
-with open('results_10_peakfactor.json', 'r') as myfile:
+with open('results_9_1temperatuur_wijk.json', 'r') as myfile:
     data=myfile.read()
+
+# with open('results_10_peakfactor.json', 'r') as myfile:
+#     data=myfile.read()
 
 # parse file
 obj = json.loads(data)

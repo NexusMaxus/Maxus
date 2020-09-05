@@ -22,9 +22,13 @@ def asymptot_func(x):
 optimize=True
 
 
-points = gpd.read_file(r'C:\Users\Rogier\OneDrive\Warmtenet\All_Points_copy.shp')
-roads = gpd.read_file(r'C:\Users\Rogier\OneDrive\Warmtenet\assen_test\wegen_wijk.shp')
-buildings = gpd.read_file(r'C:\Users\Rogier\OneDrive\Warmtenet\assen_test\shape\buildings.shp')
+# points = gpd.read_file(r'C:\Users\Rogier\OneDrive\Warmtenet\All_Points_copy.shp')
+# roads = gpd.read_file(r'C:\Users\Rogier\OneDrive\Warmtenet\assen_test\wegen_wijk.shp')
+# buildings = gpd.read_file(r'C:\Users\Rogier\OneDrive\Warmtenet\assen_test\shape\buildings.shp')
+
+points = gpd.read_file('/home/rogier/earlybirds/assen_test/AllPoints.shp')
+roads = gpd.read_file(r'/home/rogier/earlybirds/assen_test/wegen_wijk.shp')
+buildings = gpd.read_file(r'/home/rogier/earlybirds/assen_test/shape/buildings.shp')
 
 
 idx = points.index.tolist()
@@ -244,12 +248,9 @@ if optimize == True:
     #         return sum(m.Q_h[h] for h in m.h) == sum(m.Q[x2, x] for x2 in m.x)
 
 
-
-
-
     def one_direction_con(m, x, x2, t):
         if x != x2:
-            return m.Q[x, x2, t] * m.Q[x2, x, t] == 0;
+            return m.Q[x, x2, t] * m.Q[x2, x, t] == 0
         else:
             return Constraint.Skip
 
@@ -286,12 +287,10 @@ if optimize == True:
     # Source
     m.SourceConstrant = Constraint(rule=Source_Con)
 
-
-
     opt = SolverFactory('ipopt')
     # opt.options['linear_solver'] = 'ma57'
     instance = m.create_instance()
-    results = opt.solve(instance, tee=True,  options={'tol': 0.01, 'max_iter': 10000, 'hessian_approximation' : 'limited-memory'})
+    results = opt.solve(instance, tee=True,  options={'tol': 0.03, 'max_iter': 10000, 'hessian_approximation' : 'limited-memory'}, logfile="/home/rogier/PycharmProjects/Maxus/Warmtenet/log_ipopt.log", keepfiles=True)
     # instance.pprint('network_constructed')
     instance.solutions.store_to(results)
     results.write(filename='results_10_peakfactor.json', format='json')

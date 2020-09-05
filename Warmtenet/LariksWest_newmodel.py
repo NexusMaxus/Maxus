@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 from pyomo.environ import *
 from pyomo.opt import SolverFactory, TerminationCondition
+from shapely.geometry import Point, LineString
 import random
 
 
@@ -13,17 +14,15 @@ def step_func(x):
         + ((2 + exp(-10 * (-x - delta))) / (1 + exp(-10 * (-x - delta)))) - 1
     return z
 
+
 def asymptot_func(x):
     # z = 1 / (((x + 0.05) * 10)** 2 + 0.05) + 1
     z = 1/((exp(10*x)-1)+1) +1
     return z
 
 
-from shapely.geometry import Point, LineString
-
 def cut(line, distance):
-    # Cuts a line in two at a distance from its starting point
-    # This is taken from shapely manual
+    """Cuts a line in two at a distance from its starting point"""
     if distance <= 0.0 or distance >= line.length:
         return [LineString(line)]
     coords = list(line.coords)
@@ -39,16 +38,12 @@ def cut(line, distance):
                 LineString(coords[:i] + [(cp.x, cp.y)]),
                 LineString([(cp.x, cp.y)] + coords[i:])]
 
+
 def split_line_with_points(line, points):
     """Splits a line string in several segments considering a list of points.
 
     The points used to cut the line are assumed to be in the line string
     and given in the order of appearance they have in the line string.
-
-    >>> line = LineString( [(1,2), (8,7), (4,5), (2,4), (4,7), (8,5), (9,18),
-    ...        (1,2),(12,7),(4,5),(6,5),(4,9)] )
-    >>> points = [Point(2,4), Point(9,18), Point(6,5)]
-    >>> [str(s) for s in split_line_with_points(line, points)]
     ['LINESTRING (1 2, 8 7, 4 5, 2 4)', 'LINESTRING (2 4, 4 7, 8 5, 9 18)', 'LINESTRING (9 18, 1 2, 12 7, 4 5, 6 5)', 'LINESTRING (6 5, 4 9)']
 
     """
@@ -62,8 +57,8 @@ def split_line_with_points(line, points):
     return segments
 
 
-crs ={ 'init': 'epsg:28992'}
-optimize=True
+crs = {'init': 'epsg:28992'}
+optimize = True
 
 
 points = gpd.read_file('./data/All_Points.shp')
@@ -76,12 +71,7 @@ buildings.reset_index(drop=True, inplace=True)
 buildings_csv = pd.read_csv('./data/DEMO-gebouwgegevens.csv')
 buildings_csv.sort_values(by='identifica', inplace=True)
 buildings_csv.reset_index(drop=True, inplace=True)
-
-
-
 buildings = buildings.join(buildings_csv, lsuffix='l')
-buildings.drop(['identifical', 'bouwjaarl', 'statusl', 'gebruiksdol', 'oppervlaktl'], axis=1)
-
 
 points.sort_values(by=['point_type'], inplace=True)
 points = points.reset_index(drop=True)
@@ -89,109 +79,84 @@ idx = points.index.tolist()
 source = points.loc[points['point_type'] == 'b'].index.values[0]
 idx.pop(source)
 points = points.reindex(idx+[source])
-points = points.reset_index(drop = True)
+points = points.reset_index(drop=True)
 
+# see what roads contain multiple points (roads that do not go only from one to another point)
+long_roads = {}
+road_point_count = np.zeros(roads.shape[0], dtype=int)
 
-i = int(0)
-j = int(0)
-Roads2 = []
-roadpointcount = np.zeros(roads.shape[0], dtype=int)
-
-for road in roads.geometry:
+for i, road in enumerate(roads.geometry):
     x = 0
-    Parray = []
-    for point in points.geometry:
+    p_array = []
+    for j, point in enumerate(points.geometry):
         if road.distance(point) < 1e-1:
             x += 1
-            Parray.append(j)
-        roadpointcount[i] = x
-
-        j += 1
-
+            p_array.append(j)
+        road_point_count[i] = x
     if x > 2:
-        Roads2.append((Parray, i))
-    i += 1
-    j = 0
+        long_roads[i] = p_array
 
-
-Roads3 = []
-complete_roads = []
-
-for segments, i in Roads2:
-    Points2 = []
+# split roads that contain multiple points in smaller parts
+smaller_parts = []
+for road_number, segments in long_roads.items():
+    points_in_long_road = []
     distance = []
     for j in segments:
-        distance.append(roads.geometry[i].project(points.geometry[j][0]))
-        Points2.append(points.geometry[j][0])
-    df = pd.DataFrame({'dis': distance})
+        distance.append(roads.geometry[road_number].project(points.geometry[j][0]))
+        points_in_long_road.append(points.geometry[j][0])
 
-    Points_gpd = gpd.GeoDataFrame(df, crs=crs, geometry=Points2)
-    Points_gpd.sort_values('dis', inplace=True)
-    Points_gpd.reset_index(drop=True, inplace=True)
+    df_points_in_road = pd.DataFrame({'dis': distance})
+    points_gpd = gpd.GeoDataFrame(df_points_in_road , crs=crs, geometry=points_in_long_road)
+    points_gpd.sort_values('dis', inplace=True)
+    points_gpd.reset_index(drop=True, inplace=True)
+    smaller_parts.extend(split_line_with_points(roads.geometry[road_number], points_gpd.geometry[1:-1]))
 
-    Roads3.extend(split_line_with_points(roads.geometry[i], Points_gpd.geometry[1:-1]))
-    complete_roads.append(i)
+# merge split roads with other roads
+roads.drop(axis=0, index=long_roads.keys(), inplace=True)
+gdf_long_roads_split = gpd.GeoDataFrame(crs=crs, geometry=smaller_parts)
+gdf_small_roads = gpd.GeoDataFrame(crs=crs, geometry=roads.geometry)
+roads = pd.concat([gdf_small_roads, gdf_long_roads_split], axis=0, ignore_index=True, sort=False)
 
-roads.drop(axis=0, index=complete_roads, inplace=True)
-gdf2 = gpd.GeoDataFrame(crs=crs, geometry=Roads3)
-gdf3 = gpd.GeoDataFrame(crs=crs, geometry=roads.geometry)
-roads = pd.concat([gdf3, gdf2], axis=0, ignore_index=True, sort=False)
-
-
-PointsInRoads = np.zeros((len(roads.geometry),len(points.geometry)), dtype=np.int16)
-PointsInRoadsShort = np.ones((len(roads.geometry),2),dtype=np.int16)*-1
-
-i = 0
-j = 0
-for road in roads.geometry:
-    x = 0;
-    for point in points.geometry:
+# see what points are connected by the roads
+points_in_road = np.zeros((len(roads.geometry), len(points.geometry)), dtype=int)
+points_in_road_short = np.ones((len(roads.geometry), 2), dtype=int)*-1
+for i, road in enumerate(roads.geometry):
+    x = 0
+    for j, point in enumerate(points.geometry):
         if road.distance(point) < 1e-1:
-            PointsInRoads[i,j] = 1
-            PointsInRoadsShort[i,x] = j
+            points_in_road[i, j] = 1
+            points_in_road_short[i, x] = j
             x += 1
-        j += 1
-    j = 0
-    i += 1
 
+# see what points can connect to other points
+points_connected = np.zeros((len(points.geometry), len(points.geometry)))
+length_roads = 0.01 * np.ones((len(points.geometry), len(points.geometry)))
 
+for i in range(len(points_in_road_short)):
+    if np.logical_and(points_in_road_short[i, 0] != -1, points_in_road_short[i, 1] != -1):
+        points_connected[points_in_road_short[i, 0], points_in_road_short[i, 1]] = 1
+        points_connected[points_in_road_short[i, 1], points_in_road_short[i, 0]] = 1
+        length_roads[points_in_road_short[i, 1], points_in_road_short[i, 0]] = roads.geometry[i].length
+        length_roads[points_in_road_short[i, 0], points_in_road_short[i,1]] = roads.geometry[i].length
 
+# check to how many streets the points are connected
+streets_connected = np.zeros(np.size(points_connected, 0))
+for i in range(0, np.size(points_connected, 0)):
+    streets_connected[i] = sum(points_connected[i, :])
 
-PointsConnected = np.zeros((len(points.geometry),len(points.geometry)))
-length_roads = 0.01*np.ones((len(points.geometry),len(points.geometry)))
-
-
-for i in range(0, np.size(PointsInRoadsShort,0)):
-    if np.logical_and(PointsInRoadsShort[i,0] != -1, PointsInRoadsShort[i,1] != -1):
-        PointsConnected[int(PointsInRoadsShort[i,0]),int(PointsInRoadsShort[i,1])] = 1
-        PointsConnected[int(PointsInRoadsShort[i, 1]), int(PointsInRoadsShort[i, 0])] = 1
-        length_roads[int(PointsInRoadsShort[i, 1]), int(PointsInRoadsShort[i, 0])] = roads.geometry[i].length
-        length_roads[int(PointsInRoadsShort[i,0]),int(PointsInRoadsShort[i,1])]= roads.geometry[i].length
-
-
-StreetsConnected = np.zeros(np.size(PointsConnected,0))
-
-for i in range(0, np.size(PointsConnected,0)):
-    StreetsConnected[i] = sum(PointsConnected[i,:])
-
-points_mask=np.ones([len(points), 1])-2
+# check which points are in a building
+points_mask = np.ones([len(points), 1])-2
 building_mask = np.zeros([len(buildings), 1])-2
-i=0
-for point in points.geometry:
-    j=0
-    for polygon in buildings.geometry:
-        # x=0
+for i, point in enumerate(points.geometry):
+    for j, polygon in enumerate(buildings.geometry):
         if polygon.contains(point):
             points_mask[i] = j
             building_mask[j] = i
-            x += 1
-            # if x == 2:
-            #     print(points_mask[i])
-        j+=1
-    i+=1
 
-mask = points_mask>-1
+mask = points_mask > -1
 points['house'] = mask
+
+# sort such that all points in buildings are on top (don't know why this was implemented?')
 points.sort_values('house', inplace=True, ascending=False)
 points.reset_index(inplace=True, drop=True)
 
@@ -224,8 +189,8 @@ if optimize:
     C_e = 50  # 50
     C_b = 100
     C_constant_source = 20000
-    # C_street = pd.DataFrame(data=PointsConnected * 2)
-    Q_poss = pd.DataFrame(data=PointsConnected * 999)
+    # C_street = pd.DataFrame(data=points_connected * 2)
+    Q_poss = pd.DataFrame(data=points_connected * 999)
     length_roads_pd = pd.DataFrame(data=length_roads)
 
     del (points)

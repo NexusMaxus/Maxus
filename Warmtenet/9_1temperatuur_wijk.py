@@ -22,9 +22,13 @@ def asymptot_func(x):
 optimize=True
 
 
-points = gpd.read_file(r'C:\Users\Rogier\OneDrive\Warmtenet\All_Points_copy.shp')
-roads = gpd.read_file(r'C:\Users\Rogier\OneDrive\Warmtenet\assen_test\wegen_wijk.shp')
-buildings = gpd.read_file(r'C:\Users\Rogier\OneDrive\Warmtenet\assen_test\shape\buildings.shp')
+# points = gpd.read_file(r'C:\Users\Rogier\OneDrive\Warmtenet\All_Points_copy.shp')
+# roads = gpd.read_file(r'C:\Users\Rogier\OneDrive\Warmtenet\assen_test\wegen_wijk.shp')
+# buildings = gpd.read_file(r'C:\Users\Rogier\OneDrive\Warmtenet\assen_test\shape\buildings.shp')
+
+points = gpd.read_file('/home/rogier/earlybirds/assen_test/AllPoints.shp')
+roads = gpd.read_file(r'/home/rogier/earlybirds/assen_test/wegen_wijk.shp')
+buildings = gpd.read_file(r'/home/rogier/earlybirds/assen_test/shape/buildings.shp')
 
 
 idx = points.index.tolist()
@@ -68,23 +72,16 @@ for i in range(0, np.size(PointsConnected,0)):
     StreetsConnected[i] = sum(PointsConnected[i,:])
 
 
-
-
-if optimize == True:
+if optimize:
 
     #buildings
     X = len(points)-1
     H = len(buildings)-1
-
-    P_h = pd.Series(data = 50 * np.ones(int(len(buildings))))#random.sample(np.arange(50,50.5,0.001).tolist(), int(len(buildings))))
-
-    PKhuis = pd.Series(data = buildings['area']/ (500 * np.ones(int(len(buildings))))) #random.sample(np.arange(1000,1000.5,0.001).tolist(), int(len(buildings))))
-
-    WV = pd.Series(data = buildings['area']/(10 * np.ones(int(len(buildings))))) #data = buildings['area'] / random.sample(np.arange(15,15.5,0.001).tolist(), int(len(buildings))))
-
+    P_h = pd.Series(data = random.sample(np.arange(10, 100, 0.1).tolist(), int(len(buildings)))) #50 * np.ones(int(len(buildings))))
+    PKhuis = pd.Series(data = buildings['area']/ (1000 * np.ones(int(len(buildings))))) #random.sample(np.arange(1000,1000.5,0.001).tolist(), int(len(buildings))))
+    WV = pd.Series(data = buildings['area']/(15 * np.ones(int(len(buildings))))) #data = buildings['area'] / random.sample(np.arange(15,15.5,0.001).tolist(), int(len(buildings))))
     T_in = 60
     T_out = pd.Series(data=40 * np.ones(len(buildings)))
-
     T_source_in = 30
     T_source_out = 10
     Ef = 0.07
@@ -104,36 +101,28 @@ if optimize == True:
     del (buildings)
 
     m = AbstractModel()
-
-
     m.H = Param(within=NonNegativeIntegers, initialize=H)
     m.X = Param(within=NonNegativeIntegers, initialize=X)
 
     #sets
-    m.h = RangeSet(0,m.H)
-    m.x = RangeSet(0,m.X)
+    m.h = RangeSet(0, m.H)
+    m.x = RangeSet(0, m.X)
 
     #parameters
-
-
     m.P_h = Param(m.h, within=NonNegativeReals, initialize=P_h.to_dict())
     m.WV = Param(m.h, within=NonNegativeReals, initialize=WV.to_dict())
     m.PKhuis = Param( m.h, within=NonNegativeReals, initialize = PKhuis.to_dict())
-
-
     m.T_in = Param(within=NonNegativeReals, initialize=T_in)
     m.T_source_in = Param(within=NonNegativeReals, initialize=T_source_in)
     m.T_out = Param(m.h, within=NonNegativeReals, initialize=T_out.to_dict())
     m.T_source_out = Param(within=NonNegativeReals, initialize=T_source_out)
-
     m.Ef = Param(within=NonNegativeReals, initialize=Ef)  # energyuse pump per kWh heat)
     m.U = Param(within=NonNegativeReals, initialize=U)  # stroomsnelheid | flow velocity
     m.ro = Param(within=NonNegativeReals, initialize=ro)  # dichtheid | density
     m.sw = Param(within=NonNegativeReals, initialize=sw)  # ...  | soortelijke warmte
-
     m.Q_poss = Param(m.x, m.x, within=NonNegativeReals, initialize=Q_poss.stack().to_dict())
-
     m.length = Param(m.x, m.x, within=NonNegativeReals, initialize=length_roads_pd.stack().to_dict())
+
     # parameters: cost
     m.C_constant_source = Param(within=NonNegativeReals, initialize=C_constant_source)
     m.C_bron = Param(within=NonNegativeReals, initialize=C_bron)
@@ -141,8 +130,7 @@ if optimize == True:
     m.C_b = Param(within=NonNegativeReals, initialize=C_b)
     # m.C_Street = Param(m.x, m.x, within=NonNegativeReals, initialize=C_street.stack().to_dict())
 
-
-    #variables
+    # variables
     m.A = Var(m.x, m.x, domain=NonNegativeReals)
     m.Q = Var(m.x, m.x, domain=NonNegativeReals)
     m.PK_bron = Var(domain=NonNegativeReals)
@@ -152,8 +140,7 @@ if optimize == True:
     m.Q_source = Var( domain=NonNegativeReals)
     m.P_grid = Var( domain = NonNegativeReals)
 
-
-    #variables: cost
+    # variables: cost
     m.CostTubes = Var(domain=NonNegativeReals)
     m.CostEnergy = Var(domain=NonNegativeReals)
     m.Revenue = Var(domain=Reals)
@@ -265,12 +252,10 @@ if optimize == True:
     # Source
     m.SourceConstrant = Constraint(rule=Source_Con)
 
-
-
     opt = SolverFactory('ipopt')
     # opt.options['linear_solver'] = 'ma57'
     instance = m.create_instance()
-    results = opt.solve(instance, tee=True,  options={'tol': 0.01, 'max_iter': 10000,  'hessian_approximation' : 'limited-memory'})
-    #instance.pprint('network_constructed')
+    results = opt.solve(instance, tee=True,  options={'tol': 0.01, 'max_iter': 10000,  'hessian_approximation' : 'limited-memory', 'print_level':5})
+    # instance.pprint('network_constructed')
     instance.solutions.store_to(results)
     results.write(filename='results_9_1temperatuur_wijk.json', format='json')

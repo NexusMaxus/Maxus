@@ -160,7 +160,7 @@ if __name__ == '__main__':
     import pyomo.environ
 
 
-    opt = SolverFactory('bonmin')
+    opt = SolverFactory('ipopt')
     # opt.options['linear_solver'] = 'ma57'
     instance = m.create_instance()
     results = opt.solve(instance, tee=True,  options={'tol': 1e-5, 'max_iter': 1000})

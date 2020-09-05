@@ -1,5 +1,4 @@
 import geopandas as gpd
-import pandas as pd
 import json
 import numpy as np
 import matplotlib.pyplot as plt
@@ -40,7 +39,7 @@ for road in roads.geometry:
 
 
 # read file
-with open('results_10_1temperatuur_wijk.json', 'r') as myfile:
+with open('results_9_1temperatuur_wijk.json', 'r') as myfile:
     data=myfile.read()
 
 # parse file

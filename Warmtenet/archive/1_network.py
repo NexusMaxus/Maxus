@@ -141,7 +141,7 @@ if __name__ == '__main__':
     import pyomo.environ
 
 
-    opt = SolverFactory('Ipopt')
+    opt = SolverFactory('ipopt')
     instance= m.create_instance()
     results = opt.solve(instance)
     m.solutions.store_to(results)
