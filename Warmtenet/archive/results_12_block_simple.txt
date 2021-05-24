@@ -1,0 +1,210 @@
+Model unknown
+
+  Variables:
+    P_grid : Size=1, Index=None
+        Key  : Lower : Value : Upper : Fixed : Stale : Domain
+        None :     0 :   0.0 :  None : False : False : NonNegativeReals
+
+  Objectives:
+    obj : Size=1, Index=None, Active=True
+        Key  : Active : Value
+        None :   True : -30.7139234079
+
+  Constraints:
+    linking_points : Size=10
+        Key    : Lower : Body               : Upper
+        (0, 1) :   0.0 :                0.0 :   0.0
+        (0, 2) :   0.0 :                0.0 :   0.0
+        (1, 0) :   0.0 :  5.47382212627e-48 :   0.0
+        (1, 2) :   0.0 :                0.0 :   0.0
+        (2, 0) :   0.0 : -1.14335192717e-37 :   0.0
+        (2, 1) :   0.0 : -1.19806310337e-38 :   0.0
+        (2, 3) :   0.0 :                0.0 :   0.0
+        (3, 2) :   0.0 :  2.22696724504e-38 :   0.0
+        (3, 4) :   0.0 :                0.0 :   0.0
+        (4, 3) :   0.0 :                0.0 :   0.0
+    PgridConstraint : Size=2
+        Key : Lower : Body           : Upper
+          0 :  None : -29.9628709408 :   0.0
+          1 :  None :  -34.956489949 :   0.0
+    house_to_point : Size=2
+        Key : Lower : Body : Upper
+          0 :   0.0 :  0.0 :   0.0
+          1 :   0.0 :  0.0 :   0.0
+    opposite_directions : Size=5
+        Key    : Lower : Body              : Upper
+        (0, 1) :   0.0 : 7.73963228138e-33 :   0.0
+        (0, 2) :   0.0 : 2.04511186271e-25 :   0.0
+        (1, 2) :   0.0 : 5.74292512096e-44 :   0.0
+        (2, 3) :   0.0 : 1.50109362424e-35 :   0.0
+        (3, 4) :   0.0 :               0.0 :   0.0
+
+  Blocks:
+    Block p[0]
+    
+      Variables:
+        Q_to : Size=2, Index=p[0].i
+            Key : Lower : Value          : Upper : Fixed : Stale : Domain
+              1 :     0 : 0.334086545267 :  None : False : False : NonNegativeReals
+              2 :     0 :  0.26325936663 :  None : False : False : NonNegativeReals
+        Q_from : Size=2, Index=p[0].i
+            Key : Lower : Value             : Upper : Fixed : Stale : Domain
+              1 :     0 : 2.31665488809e-32 :  None : False : False : NonNegativeReals
+              2 :     0 :  7.7684296247e-25 :  None : False : False : NonNegativeReals
+        total_Q : Size=1, Index=None
+            Key  : Lower : Value         : Upper : Fixed : Stale : Domain
+            None :     0 : 4.99999999999 :  None : False : False : NonNegativeReals
+        Q_from_h : Size=1, Index=None
+            Key  : Lower : Value          : Upper : Fixed : Stale : Domain
+            None :     0 : 0.597345911897 :  None : False : False : NonNegativeReals
+    
+      Objectives:
+        None
+    
+      Constraints:
+        junction_balance : Size=1
+            Key  : Lower : Body              : Upper
+            None :   0.0 : 1.11022302463e-16 :   0.0
+        junction_streets : Size=1
+            Key  : Lower : Body             : Upper
+            None :   0.0 : -8.881784197e-16 :   0.0
+    Block p[1]
+    
+      Variables:
+        Q_to : Size=2, Index=p[1].i
+            Key : Lower : Value             : Upper : Fixed : Stale : Domain
+              0 :     0 : 2.31665488809e-32 :  None : False : False : NonNegativeReals
+              2 :     0 :    0.931429162303 :  None : False : False : NonNegativeReals
+        Q_from : Size=2, Index=p[1].i
+            Key : Lower : Value             : Upper : Fixed : Stale : Domain
+              0 :     0 :    0.334086545267 :  None : False : False : NonNegativeReals
+              2 :     0 : 1.19806926908e-38 :  None : False : False : NonNegativeReals
+        total_Q : Size=1, Index=None
+            Key  : Lower : Value         : Upper : Fixed : Stale : Domain
+            None :     0 : 3.63262200639 :  None : False : False : NonNegativeReals
+        Q_from_h : Size=1, Index=None
+            Key  : Lower : Value          : Upper : Fixed : Stale : Domain
+            None :     0 : 0.597342617037 :  None : False : False : NonNegativeReals
+    
+      Objectives:
+        None
+    
+      Constraints:
+        junction_balance : Size=1
+            Key  : Lower : Body : Upper
+            None :   0.0 :  0.0 :   0.0
+        junction_streets : Size=1
+            Key  : Lower : Body : Upper
+            None :   0.0 :  0.0 :   0.0
+    Block p[2]
+    
+      Variables:
+        Q_to : Size=3, Index=p[2].i
+            Key : Lower : Value             : Upper : Fixed : Stale : Domain
+              0 :     0 :  7.7684296247e-25 :  None : False : False : NonNegativeReals
+              1 :     0 : 6.16571324303e-44 :  None : False : False : NonNegativeReals
+              3 :     0 :     1.19468852893 :  None : False : False : NonNegativeReals
+        Q_from : Size=3, Index=p[2].i
+            Key : Lower : Value             : Upper : Fixed : Stale : Domain
+              0 :     0 :     0.26325936663 :  None : False : False : NonNegativeReals
+              1 :     0 :    0.931429162303 :  None : False : False : NonNegativeReals
+              3 :     0 : 1.25424581866e-35 :  None : False : False : NonNegativeReals
+        total_Q : Size=1, Index=None
+            Key  : Lower : Value         : Upper : Fixed : Stale : Domain
+            None :     0 : 9.03048802558 :  None : False : False : NonNegativeReals
+    
+      Objectives:
+        None
+    
+      Constraints:
+        junction_balance : Size=1
+            Key  : Lower : Body : Upper
+            None :   0.0 :  0.0 :   0.0
+        junction_streets : Size=1
+            Key  : Lower : Body : Upper
+            None :   0.0 :  0.0 :   0.0
+    Block p[3]
+    
+      Variables:
+        Q_to : Size=2, Index=p[3].i
+            Key : Lower : Value            : Upper : Fixed : Stale : Domain
+              2 :     0 : 1.2564727859e-35 :  None : False : False : NonNegativeReals
+              4 :     0 :    1.19468852893 :  None : False : False : NonNegativeReals
+        Q_from : Size=2, Index=p[3].i
+            Key : Lower : Value         : Upper : Fixed : Stale : Domain
+              2 :     0 : 1.19468852893 :  None : False : False : NonNegativeReals
+              4 :     0 :           0.0 :  None : False : False : NonNegativeReals
+        total_Q : Size=1, Index=None
+            Key  : Lower : Value         : Upper : Fixed : Stale : Domain
+            None :     0 : 8.89786601918 :  None : False : False : NonNegativeReals
+    
+      Objectives:
+        None
+    
+      Constraints:
+        junction_balance : Size=1
+            Key  : Lower : Body : Upper
+            None :   0.0 :  0.0 :   0.0
+        junction_streets : Size=1
+            Key  : Lower : Body             : Upper
+            None :   0.0 : 1.7763568394e-15 :   0.0
+    Block p[4]
+    
+      Variables:
+        Q_to : Size=1, Index=p[4].i
+            Key : Lower : Value : Upper : Fixed : Stale : Domain
+              3 :     0 :   0.0 :  None : False : False : NonNegativeReals
+        Q_from : Size=1, Index=p[4].i
+            Key : Lower : Value         : Upper : Fixed : Stale : Domain
+              3 :     0 : 1.19468852893 :  None : False : False : NonNegativeReals
+        total_Q : Size=1, Index=None
+            Key  : Lower : Value         : Upper : Fixed : Stale : Domain
+            None :     0 : 4.15294735678 :  None : False : False : NonNegativeReals
+        Q_to_s : Size=1, Index=None
+            Key  : Lower : Value         : Upper : Fixed : Stale : Domain
+            None :     0 : 1.19468852893 :  None : False : False : NonNegativeReals
+    
+      Objectives:
+        None
+    
+      Constraints:
+        junction_balance : Size=1
+            Key  : Lower : Body : Upper
+            None :   0.0 :  0.0 :   0.0
+        junction_streets : Size=1
+            Key  : Lower : Body             : Upper
+            None :   0.0 : -8.881784197e-16 :   0.0
+    Block d[0]
+    
+      Variables:
+        Q_h : Size=1, Index=None
+            Key  : Lower : Value          : Upper : Fixed : Stale : Domain
+            None :  None : 0.597345911897 :  None : False : False :  Reals
+        Conn : Size=1, Index=None
+            Key  : Lower : Value          : Upper : Fixed : Stale : Domain
+            None :     0 : 0.998762364692 :     1 : False : False : Binary
+    
+      Objectives:
+        None
+    
+      Constraints:
+        PowerConstraint : Size=1
+            Key  : Lower : Body : Upper
+            None :   0.0 :  0.0 :   0.0
+    Block d[1]
+    
+      Variables:
+        Q_h : Size=1, Index=None
+            Key  : Lower : Value          : Upper : Fixed : Stale : Domain
+            None :  None : 0.597342617037 :  None : False : False :  Reals
+        Conn : Size=1, Index=None
+            Key  : Lower : Value          : Upper : Fixed : Stale : Domain
+            None :     0 : 0.998756855685 :     1 : False : False : Binary
+    
+      Objectives:
+        None
+    
+      Constraints:
+        PowerConstraint : Size=1
+            Key  : Lower : Body             : Upper
+            None :   0.0 : 7.1054273576e-15 :   0.0

@@ -1,0 +1,160 @@
+Model unknown
+
+  Variables:
+    Conn : Size=67, Index=h
+        Key : Lower : Value : Upper : Fixed : Stale : Domain
+          0 :     0 :   1.0 :     1 : False : False : Binary
+          1 :     0 :   1.0 :     1 : False : False : Binary
+          2 :     0 :   1.0 :     1 : False : False : Binary
+          3 :     0 :   1.0 :     1 : False : False : Binary
+          4 :     0 :   1.0 :     1 : False : False : Binary
+          5 :     0 :   1.0 :     1 : False : False : Binary
+          6 :     0 :   1.0 :     1 : False : False : Binary
+          7 :     0 :   1.0 :     1 : False : False : Binary
+          8 :     0 :   1.0 :     1 : False : False : Binary
+          9 :     0 :   1.0 :     1 : False : False : Binary
+         10 :     0 :   1.0 :     1 : False : False : Binary
+         11 :     0 :   1.0 :     1 : False : False : Binary
+         12 :     0 :   1.0 :     1 : False : False : Binary
+         13 :     0 :   1.0 :     1 : False : False : Binary
+         14 :     0 :   1.0 :     1 : False : False : Binary
+         15 :     0 :   1.0 :     1 : False : False : Binary
+         16 :     0 :   1.0 :     1 : False : False : Binary
+         17 :     0 :   1.0 :     1 : False : False : Binary
+         18 :     0 :   1.0 :     1 : False : False : Binary
+         19 :     0 :   1.0 :     1 : False : False : Binary
+         20 :     0 :   1.0 :     1 : False : False : Binary
+         21 :     0 :   1.0 :     1 : False : False : Binary
+         22 :     0 :   1.0 :     1 : False : False : Binary
+         23 :     0 :   1.0 :     1 : False : False : Binary
+         24 :     0 :   1.0 :     1 : False : False : Binary
+         25 :     0 :   1.0 :     1 : False : False : Binary
+         26 :     0 :   1.0 :     1 : False : False : Binary
+         27 :     0 :   1.0 :     1 : False : False : Binary
+         28 :     0 :   1.0 :     1 : False : False : Binary
+         29 :     0 :   1.0 :     1 : False : False : Binary
+         30 :     0 :   1.0 :     1 : False : False : Binary
+         31 :     0 :   1.0 :     1 : False : False : Binary
+         32 :     0 :   1.0 :     1 : False : False : Binary
+         33 :     0 :   1.0 :     1 : False : False : Binary
+         34 :     0 :   1.0 :     1 : False : False : Binary
+         35 :     0 :   1.0 :     1 : False : False : Binary
+         36 :     0 :   1.0 :     1 : False : False : Binary
+         37 :     0 :   1.0 :     1 : False : False : Binary
+         38 :     0 :   1.0 :     1 : False : False : Binary
+         39 :     0 :   1.0 :     1 : False : False : Binary
+         40 :     0 :   1.0 :     1 : False : False : Binary
+         41 :     0 :   1.0 :     1 : False : False : Binary
+         42 :     0 :   1.0 :     1 : False : False : Binary
+         43 :     0 :   1.0 :     1 : False : False : Binary
+         44 :     0 :   1.0 :     1 : False : False : Binary
+         45 :     0 :   1.0 :     1 : False : False : Binary
+         46 :     0 :   1.0 :     1 : False : False : Binary
+         47 :     0 :   1.0 :     1 : False : False : Binary
+         48 :     0 :   1.0 :     1 : False : False : Binary
+         49 :     0 :   1.0 :     1 : False : False : Binary
+         50 :     0 :   1.0 :     1 : False : False : Binary
+         51 :     0 :   1.0 :     1 : False : False : Binary
+         52 :     0 :   1.0 :     1 : False : False : Binary
+         53 :     0 :   1.0 :     1 : False : False : Binary
+         54 :     0 :   1.0 :     1 : False : False : Binary
+         55 :     0 :   1.0 :     1 : False : False : Binary
+         56 :     0 :   1.0 :     1 : False : False : Binary
+         57 :     0 :   1.0 :     1 : False : False : Binary
+         58 :     0 :   1.0 :     1 : False : False : Binary
+         59 :     0 :   1.0 :     1 : False : False : Binary
+         60 :     0 :   1.0 :     1 : False : False : Binary
+         61 :     0 :   1.0 :     1 : False : False : Binary
+         62 :     0 :   1.0 :     1 : False : False : Binary
+         63 :     0 :   1.0 :     1 : False : False : Binary
+         64 :     0 :   1.0 :     1 : False : False : Binary
+         65 :     0 :   1.0 :     1 : False : False : Binary
+         66 :     0 :   1.0 :     1 : False : False : Binary
+    P_grid : Size=1, Index=None
+        Key  : Lower : Value        : Upper : Fixed : Stale : Domain
+        None :     0 : 10.700000107 :  None : False : False : NonNegativeReals
+    Revenue : Size=1, Index=None
+        Key  : Lower : Value         : Upper : Fixed : Stale : Domain
+        None :     0 : 63212.8899655 :  None : False : False : NonNegativeReals
+    CostStreets : Size=1, Index=None
+        Key  : Lower : Value : Upper : Fixed : Stale : Domain
+        None :     0 :     0 :  None : False : False : NonNegativeReals
+
+  Objectives:
+    OBJ : Size=1, Index=None, Active=True
+        Key  : Active : Value
+        None :   True : 43212.8899655
+
+  Constraints:
+    RevenueConstraint : Size=1
+        Key  : Lower : Body               : Upper
+        None :   0.0 : -7.27595761418e-12 :   0.0
+    PgridConstraint : Size=67
+        Key : Lower : Body              : Upper
+          0 :  None :     -48.899999893 :   0.0
+          1 :  None : 1.06999575422e-07 :   0.0
+          2 :  None :     -62.299999893 :   0.0
+          3 :  None :     -53.099999893 :   0.0
+          4 :  None :     -45.699999893 :   0.0
+          5 :  None :     -74.399999893 :   0.0
+          6 :  None :     -30.299999893 :   0.0
+          7 :  None :      -1.999999893 :   0.0
+          8 :  None :     -64.799999893 :   0.0
+          9 :  None :      -6.899999893 :   0.0
+         10 :  None :     -51.099999893 :   0.0
+         11 :  None :     -35.699999893 :   0.0
+         12 :  None :     -30.599999893 :   0.0
+         13 :  None :      -6.399999893 :   0.0
+         14 :  None :     -55.999999893 :   0.0
+         15 :  None :     -59.899999893 :   0.0
+         16 :  None :     -24.899999893 :   0.0
+         17 :  None :     -42.599999893 :   0.0
+         18 :  None :     -24.399999893 :   0.0
+         19 :  None :     -33.599999893 :   0.0
+         20 :  None :     -56.999999893 :   0.0
+         21 :  None :     -10.499999893 :   0.0
+         22 :  None :     -20.799999893 :   0.0
+         23 :  None :      -6.299999893 :   0.0
+         24 :  None :     -54.299999893 :   0.0
+         25 :  None :     -42.999999893 :   0.0
+         26 :  None :     -15.499999893 :   0.0
+         27 :  None :     -40.799999893 :   0.0
+         28 :  None :     -50.399999893 :   0.0
+         29 :  None :      -0.499999893 :   0.0
+         30 :  None :     -56.899999893 :   0.0
+         31 :  None :     -36.399999893 :   0.0
+         32 :  None :     -18.299999893 :   0.0
+         33 :  None :     -42.199999893 :   0.0
+         34 :  None :     -19.399999893 :   0.0
+         35 :  None :      -0.599999893 :   0.0
+         36 :  None :     -69.699999893 :   0.0
+         37 :  None :     -62.199999893 :   0.0
+         38 :  None :     -18.399999893 :   0.0
+         39 :  None :     -62.499999893 :   0.0
+         40 :  None :     -76.099999893 :   0.0
+         41 :  None :     -61.999999893 :   0.0
+         42 :  None :      -3.499999893 :   0.0
+         43 :  None :      -6.599999893 :   0.0
+         44 :  None :     -12.999999893 :   0.0
+         45 :  None :     -67.799999893 :   0.0
+         46 :  None :     -28.299999893 :   0.0
+         47 :  None :     -16.499999893 :   0.0
+         48 :  None :     -51.299999893 :   0.0
+         49 :  None :     -39.399999893 :   0.0
+         50 :  None :     -69.299999893 :   0.0
+         51 :  None :     -65.899999893 :   0.0
+         52 :  None :     -31.999999893 :   0.0
+         53 :  None :     -84.099999893 :   0.0
+         54 :  None :     -53.399999893 :   0.0
+         55 :  None :      -7.999999893 :   0.0
+         56 :  None :      -7.699999893 :   0.0
+         57 :  None :     -69.799999893 :   0.0
+         58 :  None :     -31.299999893 :   0.0
+         59 :  None :     -68.299999893 :   0.0
+         60 :  None :     -74.599999893 :   0.0
+         61 :  None :     -59.199999893 :   0.0
+         62 :  None :      -2.999999893 :   0.0
+         63 :  None :     -88.399999893 :   0.0
+         64 :  None :      -7.899999893 :   0.0
+         65 :  None :     -72.899999893 :   0.0
+         66 :  None :     -70.699999893 :   0.0

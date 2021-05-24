@@ -1,0 +1,144 @@
+{
+    "Problem": [
+        {
+            "Lower bound": -Infinity,
+            "Number of constraints": 0,
+            "Number of objectives": 1,
+            "Number of variables": 305,
+            "Sense": "unknown",
+            "Upper bound": Infinity
+        }
+    ],
+    "Solution": [
+        {
+            "number of solutions": 1,
+            "number of solutions displayed": 1
+        },
+        {
+            "Constraint": "No values",
+            "Gap": null,
+            "Message": "bonmin\\x3a Optimal",
+            "Objective": {
+                "OBJ": {
+                    "Value": 28899.207591649985
+                }
+            },
+            "Problem": {},
+            "Status": "optimal",
+            "Variable": {
+                "A[10,11]": {
+                    "Value": 5.3408446401211595e-08
+                },
+                "A[11,12]": {
+                    "Value": 0.21929828288860106
+                },
+                "A[2,5]": {
+                    "Value": 0.15948966589909083
+                },
+                "A[3,8]": {
+                    "Value": 0.05980864516543867
+                },
+                "A[5,4]": {
+                    "Value": 3.912546194197821e-09
+                },
+                "A[5,7]": {
+                    "Value": 0.15948965497432324
+                },
+                "A[7,9]": {
+                    "Value": 0.21929823353835
+                },
+                "A[8,10]": {
+                    "Value": 5.73664678976126e-08
+                },
+                "A[8,7]": {
+                    "Value": 0.059808580681879414
+                },
+                "A[9,11]": {
+                    "Value": 0.2192982303273294
+                },
+                "Conn[2]": {
+                    "Value": 1.0
+                },
+                "Conn[3]": {
+                    "Value": 1.0
+                },
+                "CostEnergy": {
+                    "Value": 839.9999998000012
+                },
+                "CostSource": {
+                    "Value": 1100.0001869692228
+                },
+                "CostStreets": {
+                    "Value": 349.8273260727512
+                },
+                "CostTubes": {
+                    "Value": 10.964901503201247
+                },
+                "E_use[2]": {
+                    "Value": 21.000000000000004
+                },
+                "E_use[3]": {
+                    "Value": 21.000000000000004
+                },
+                "PK_bron": {
+                    "Value": 110.00001869692228
+                },
+                "P_grid": {
+                    "Value": 52.000000009991936
+                },
+                "Q[10,11]": {
+                    "Value": 1.6022537108322373e-07
+                },
+                "Q[11,12]": {
+                    "Value": 0.6578948486658032
+                },
+                "Q[2,5]": {
+                    "Value": 0.47846899769727247
+                },
+                "Q[3,8]": {
+                    "Value": 0.179425935496316
+                },
+                "Q[5,4]": {
+                    "Value": 1.1742044850354608e-08
+                },
+                "Q[5,7]": {
+                    "Value": 0.47846896492296975
+                },
+                "Q[7,9]": {
+                    "Value": 0.6578947006150501
+                },
+                "Q[8,10]": {
+                    "Value": 1.7209954031042843e-07
+                },
+                "Q[8,7]": {
+                    "Value": 0.17942574204563824
+                },
+                "Q[9,11]": {
+                    "Value": 0.6578946909819882
+                },
+                "Q_h[2]": {
+                    "Value": 0.47846889952153115
+                },
+                "Q_h[3]": {
+                    "Value": 0.17942583732057418
+                },
+                "Q_source": {
+                    "Value": 2.6315793946632127
+                },
+                "Revenue": {
+                    "Value": 31200.000005995164
+                }
+            }
+        }
+    ],
+    "Solver": [
+        {
+            "Error rc": 0,
+            "Id": 3,
+            "Message": "bonmin\\x3a Optimal",
+            "Status": "ok",
+            "Termination condition": "optimal",
+            "Time": 15.97293472290039
+        }
+    ]
+}

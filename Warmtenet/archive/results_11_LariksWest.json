@@ -1,0 +1,9 @@
+{
+    "Solver": [
+        {
+            "Message": "Too few degrees of freedom (rethrown)!", 
+            "Status": "warning", 
+            "Termination condition": "other"
+        }
+    ]
+}
