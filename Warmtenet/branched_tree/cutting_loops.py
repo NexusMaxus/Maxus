@@ -141,7 +141,6 @@ while len(active_keys) > 0:
         p_conn = np.array(p2p[loops[key][-1]])
         if len(p_conn) == 1 and loops[key][-1] != index_bron:
             finished_points.extend(loops[key])
-            finished_points = list(set(finished_points))
             active_keys.remove(key)
             finished_keys.append(key)
 
@@ -151,36 +150,40 @@ while len(active_keys) > 0:
             else:
                 for i, p_index in enumerate(p_conn[p_conn!=loops[key][-2]]):
                     if i == 0:
-                        if (p_index not in loops[key]) and (p_index not in finished_points):
+                        if (p_index not in loops[key]) and (finished_points.count(p_index) < 20):
                             loops[key].append(p_index)
                         else:
+                            if finished_points.count(p_index) < 20:
+                                print('more than 20 times')
                             if p_index in loops[key]:
                                 finished_points.extend(loops[key][loops[key].index(p_index):])
-                                finished_points = list(set(finished_points))
                                 real_loops.append(loops[key][loops[key].index(p_index):] + [p_index])
                             loops[key].append(p_index)
-
                             active_keys.remove(key)
                             finished_keys.append(key)
                     if i>0:
                         x += 1
                         loop_orig = loops[key][:-1]
                         loops[x] = loop_orig + [p_index]
-                        if (p_index not in loop_orig) and (p_index not in finished_points):
+                        if (p_index not in loop_orig) and (finished_points.count(p_index) < 20):
                             active_keys.append(x)
                         else:
+                            if finished_points.count(p_index) < 20:
+                                print('more than 20 times')
                             finished_keys.append(x)
                             if p_index in loop_orig:
                                 finished_points.extend(loop_orig[loop_orig.index(p_index):])
-                                finished_points = list(set(finished_points))
                                 real_loops.append(loop_orig[loop_orig.index(p_index):] + [p_index])
 
 unique_loops = set(tuple(i) for i in real_loops)
 
 f, ax = plt.subplots()
 for loop in unique_loops:
+    points_unique_geometry.loc[list(loop)].plot(ax=ax)
+roads.plot(ax=ax)
+plt.show()
 
-
+print(len(unique_loops))
 
 
 
