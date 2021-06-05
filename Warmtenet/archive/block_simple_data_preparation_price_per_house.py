@@ -51,19 +51,19 @@ def split_line_with_points(line, points):
 
 crs = {'init': 'epsg:28992'}
 
-points_with_house_and_source = gpd.read_file('./totaalgebied/Aansluitpunten.geojson')
+points_with_house_and_source = gpd.read_file('../data/totaalgebied/Aansluitpunten.geojson')
 points_with_house_and_source.drop(169, inplace=True)
 points_with_house = points_with_house_and_source[points_with_house_and_source['pandidentificatie'] != 'BRON']
 points_with_house.loc[:, 'pandidentificatie'] = [str(p[1:]) for p in points_with_house['pandidentificatie']]
 
-junctions = gpd.read_file('./totaalgebied/Kruispunten.geojson')
+junctions = gpd.read_file('../data/totaalgebied/Kruispunten.geojson')
 points = pd.concat([points_with_house_and_source, junctions], ignore_index=True, sort=False)
-roads = gpd.read_file('./totaalgebied/Wegen.geojson')
+roads = gpd.read_file('../data/totaalgebied/Wegen.geojson')
 
 # points_unique_geometry = gpd.read_file('./deelgebied/Kruispunten_Ap_deel.geojson')
 points_unique_geometry = points[~points.geometry.duplicated()].reset_index()
 
-with io.open('./totaalgebied/data_Wnet_0.json', encoding='utf-8-sig') as f:
+with io.open('../data/totaalgebied/data_Wnet_0.json', encoding='utf-8-sig') as f:
     houses_data = json.load(f)
 houses_data = json_normalize(houses_data['dataWnet'])
 

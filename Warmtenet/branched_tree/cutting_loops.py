@@ -11,47 +11,17 @@ from utils import split_line_with_points
 crs = {'init': 'epsg:28992'}
 
 
-points = gpd.read_file('./data/All_Points.shp')
-roads = gpd.read_file('./data/All_Roads.shp')
-buildings = gpd.read_file('./data/Lariks-west-pand.shp')
+points_with_house_and_source = gpd.read_file('../data/totaalgebied/Aansluitpunten.geojson')
+points_with_house = points_with_house_and_source[points_with_house_and_source['pandidentificatie'] != 'BRON']
+points_with_house.loc[:, 'pandidentificatie'] = [str(p[1:]) for p in points_with_house['pandidentificatie']]
 
-buildings.sort_values(by='identifica', inplace=True)
-buildings.reset_index(drop=True, inplace=True)
+junctions = gpd.read_file('../data/totaalgebied/Kruispunten.geojson')
+points = pd.concat([points_with_house_and_source, junctions], ignore_index=True, sort=False)
+roads = gpd.read_file('../data/totaalgebied/Wegen.geojson')
 
-buildings_csv = pd.read_csv('./data/DEMO-gebouwgegevens.csv')
-buildings_csv.sort_values(by='identifica', inplace=True)
-buildings_csv.reset_index(drop=True, inplace=True)
-
-buildings = buildings.join(buildings_csv, lsuffix='l')
-buildings.drop(['identifical', 'bouwjaarl', 'statusl', 'gebruiksdol', 'oppervlaktl'], axis=1)
-
-
-points.sort_values(by=['point_type'], inplace=True)
-points = points.reset_index(drop=True)
-idx = points.index.tolist()
-source = points.loc[points['point_type'] == 'b'].index.values[0]
-idx.pop(source)
-points = points.reindex(idx+[source])
-points_unique_geometry = points.reset_index(drop = True)
-
-
+# points_unique_geometry = gpd.read_file('./deelgebied/Kruispunten_Ap_deel.geojson')
+points_unique_geometry = points[~points.geometry.duplicated()].reset_index()
 points_unique_geometry.geometry = [geom.centroid for geom in points_unique_geometry.geometry]
-
-# check which points are in a building
-p2h = {}
-
-for index_point, point in points_unique_geometry.geometry.items():
-    for index_building, polygon in buildings.geometry.items():
-        if polygon.contains(point):
-            p2h[index_point] = buildings
-            
-h_mask = []
-for index in points_unique_geometry.index:
-    if index not in p2h.keys():
-        h_mask.append(True)
-    else: 
-        h_mask.append(False)
-
 
 # see what roads contain multiple points (roads that do not go only from one to another point)
 long_roads = {}
@@ -74,7 +44,6 @@ for road_number, segments in long_roads.items():
     points_in_long_road = []
     distance = []
     for j in segments:
-        print(points_unique_geometry.geometry[j])
         distance.append(roads.geometry[road_number].project(points_unique_geometry.geometry[j]))
         points_in_long_road.append(points_unique_geometry.geometry[j])
 
@@ -122,16 +91,6 @@ for i in range(len(points_in_road_short)):
             p2p[points_in_road_short[i, 1]].append(points_in_road_short[i, 0])
             cost_streets[points_in_road_short[i, 1]].append(roads.geometry[i].length * 100)
 
-
-p2h2 = {}
-for index in points_unique_geometry.index:
-    if p2p[index][0] in p2h.keys():
-        p2h2[p2p[index][0]] = list(p2h[p2p[index][0]].index)
-
-street_network_point = points_unique_geometry.copy()
-street_network_point = street_network_point[~np.array(h_mask)]
-
-p2p = {key:p2p[key] for key in p2p.keys() if key in street_network_point.index}
-p2h = p2h2
+print(p2p)
 
 
