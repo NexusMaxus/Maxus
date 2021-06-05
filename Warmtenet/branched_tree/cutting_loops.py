@@ -11,19 +11,48 @@ from utils import split_line_with_points
 crs = {'init': 'epsg:28992'}
 
 
-points_with_house_and_source = gpd.read_file('../data/totaalgebied/Aansluitpunten.geojson')
+points_with_house_and_source = gpd.read_file('../data/loops_district/Aansluitpunten.geojson')
 points_with_house = points_with_house_and_source[points_with_house_and_source['pandidentificatie'] != 'BRON']
 points_with_house.loc[:, 'pandidentificatie'] = [str(p[1:]) for p in points_with_house['pandidentificatie']]
+index_bron = points_with_house_and_source[points_with_house_and_source['pandidentificatie'] == 'BRON'].index.values[0]
 
-junctions = gpd.read_file('../data/totaalgebied/Kruispunten.geojson')
+junctions = gpd.read_file('../data/loops_district/Kruispunten.geojson')
 points = pd.concat([points_with_house_and_source, junctions], ignore_index=True, sort=False)
-roads = gpd.read_file('../data/totaalgebied/Wegen.geojson')
+roads = gpd.read_file('../data/loops_district/Wegen.geojson')
 
-# points_unique_geometry = gpd.read_file('./deelgebied/Kruispunten_Ap_deel.geojson')
-points_unique_geometry = points[~points.geometry.duplicated()].reset_index()
-points_unique_geometry.geometry = [geom.centroid for geom in points_unique_geometry.geometry]
+# points_unique_geometry.geometry = [geom.centroid for geom in points_unique_geometry.geometry]
 
-# see what roads contain multiple points (roads that do not go only from one to another point)
+#see what point are so near to one another that they should be treated as one
+point_same = {}
+unique_points = []
+for index, point in points.iterrows():
+    point_list = []
+    if index not in unique_points:
+        for index2, point2 in points.iterrows():
+            if point.geometry.distance(point2.geometry) < 1e-1 and index != index2:
+                point_list.append(index2)
+                if index2 not in unique_points:
+                   unique_points.append(index2)
+    point_same[index] = point_list
+
+# get all panden together on that single point
+panden={}
+to_remove = []
+for key in point_same.keys():
+    if point_same[key]:
+       andere_panden = list(points.loc[point_same[key], 'pandidentificatie'].values.astype(str))
+       eigen_pand = points.loc[key,  'pandidentificatie']
+       andere_panden.append(eigen_pand)
+       panden[key] = andere_panden
+       to_remove.extend(point_same[key])
+    else:
+       panden[key] = []
+alle_panden = pd.Series(panden, name='alle_panden')
+points_unique_geometry = pd.concat([points, alle_panden], axis=1)
+points_unique_geometry = points_unique_geometry.drop(to_remove).reset_index()
+
+
+        # see what roads contain multiple points (roads that do not go only from one to another point)
 long_roads = {}
 road_point_count = np.zeros(roads.shape[0], dtype=int)
 
@@ -91,6 +120,9 @@ for i in range(len(points_in_road_short)):
             p2p[points_in_road_short[i, 1]].append(points_in_road_short[i, 0])
             cost_streets[points_in_road_short[i, 1]].append(roads.geometry[i].length * 100)
 
+# cut_loops
 print(p2p)
+
+
 
 
