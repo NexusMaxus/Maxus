@@ -55,7 +55,7 @@ roads = gpd.read_file('../data/loops_district/Wegen.geojson')
 
 points_unique_geometry = gpd.read_file('./point_unique_geometry.geojson')
 
-        # see what roads contain multiple points (roads that do not go only from one to another point)
+# see what roads contain multiple points (roads that do not go only from one to another point)
 long_roads = {}
 road_point_count = np.zeros(roads.shape[0], dtype=int)
 
@@ -72,10 +72,10 @@ for i, road in enumerate(roads.geometry):
 
 # split roads that contain multiple points in smaller parts
 smaller_parts = []
-for road_number, segments in long_roads.items():
+for road_number, segment in long_roads.items():
     points_in_long_road = []
     distance = []
-    for j in segments:
+    for j in segment:
         distance.append(roads.geometry[road_number].project(points_unique_geometry.geometry[j]))
         points_in_long_road.append(points_unique_geometry.geometry[j])
 
@@ -106,84 +106,122 @@ for i, road in enumerate(roads.geometry):
 # see what points can connect to other points
 p2p = {}
 cost_streets = {}
+streets = {}
 
 for i in range(len(points_in_road_short)):
     if np.logical_and(points_in_road_short[i, 0] != -1, points_in_road_short[i, 1] != -1):
         if points_in_road_short[i, 0] not in p2p.keys():
             p2p[points_in_road_short[i, 0]] = [points_in_road_short[i, 1]]
-            cost_streets[points_in_road_short[i, 0]] = [roads.geometry[i].length * 100]
+            cost_streets[(points_in_road_short[i,0], points_in_road_short[i, 1])] = roads.geometry[i].length * 100
+            streets[(points_in_road_short[i, 0], points_in_road_short[i, 1])] = i
         else:
             p2p[points_in_road_short[i, 0]].append(points_in_road_short[i, 1])
-            cost_streets[points_in_road_short[i, 0]].append(roads.geometry[i].length * 100)
+            cost_streets[(points_in_road_short[i, 0], points_in_road_short[i, 1])] = roads.geometry[i].length * 100
+            streets[(points_in_road_short[i, 0], points_in_road_short[i, 1])] = i
 
         if points_in_road_short[i, 1] not in p2p.keys():
             p2p[points_in_road_short[i, 1]] = [points_in_road_short[i, 0]]
-            cost_streets[points_in_road_short[i, 1]] = [roads.geometry[i].length * 100]
+            cost_streets[(points_in_road_short[i, 1], points_in_road_short[i, 0])] = roads.geometry[i].length * 100
+            streets[(points_in_road_short[i, 1], points_in_road_short[i, 0])] = i
         else:
             p2p[points_in_road_short[i, 1]].append(points_in_road_short[i, 0])
-            cost_streets[points_in_road_short[i, 1]].append(roads.geometry[i].length * 100)
+            cost_streets[(points_in_road_short[i, 1], points_in_road_short[i, 0])] = roads.geometry[i].length * 100
+            streets[(points_in_road_short[i, 1], points_in_road_short[i, 0])] = i
 
 # cut_loops
 print(p2p)
 
 index_bron =  points_unique_geometry[points_unique_geometry['pandidentificatie'] == 'BRON'].index.values[0]
 
-#find loops
-loops={}
-x=0
-loops[x] = [index_bron]
-real_loops = []
-active_keys = [x]
-finished_keys = []
-finished_points = []
-while len(active_keys) > 0:
-    for key in active_keys:
-        p_conn = np.array(p2p[loops[key][-1]])
-        if len(p_conn) == 1 and loops[key][-1] != index_bron:
-            finished_points.extend(loops[key])
-            active_keys.remove(key)
-            finished_keys.append(key)
 
-        else:
-            if len(p_conn) == 1:
-                loops[key].append(p_conn[0])
+def find_loops(p2p, index_bron):
+    paths = {}
+    x = 0
+    paths[x] = [index_bron]
+    active_keys = [x]
+    cuts = []
+    loops = []
+
+    while len(active_keys) > 0:
+        rounds = active_keys.copy()
+        for key in rounds:
+            path_orig = paths[key].copy()
+            p_conn = np.array(p2p[path_orig[-1]])
+            if len(p_conn) == 1 and path_orig[-1] != index_bron:
+                active_keys.remove(key)
             else:
-                for i, p_index in enumerate(p_conn[p_conn!=loops[key][-2]]):
-                    if i == 0:
-                        if (p_index not in loops[key]) and (finished_points.count(p_index) < 20):
-                            loops[key].append(p_index)
+                if len(p_conn) == 1:
+                    paths[key].append(p_conn[0])
+                else:
+                    for i, p_index in enumerate(p_conn[p_conn != path_orig[-2]]):
+                        if ((path_orig[-1], p_index) not in cuts) and ((p_index, path_orig[-1]) not in cuts):
+                            if i == 0:
+                                if p_index not in paths[key]:
+                                    paths[key].append(p_index)
+                                else:
+                                    loop = path_orig[path_orig.index(p_index):] + [p_index]
+                                    active_keys.remove(key)
+                                    in_loop = []
+                                    for i in range(len(loop)-1):
+                                        segment = (loop[i], loop[i + 1])
+                                        segment_r = (loop[i+1], loop[i])
+                                        in_loop.append((segment not in cuts) and (segment_r not in cuts))
+
+                                    if all(in_loop):
+                                        loops.append(loop)
+                                        cut = find_cut(loop, cost_streets)
+                                        cuts.append(cut)
+
+                                        street_index = [streets[(cut[0], cut[1])] for cut in cuts]
+                                        f, ax = plt.subplots()
+                                        roads.plot(ax=ax)
+                                        roads.loc[street_index].plot(ax=ax, color='r')
+                                        plt.show()
+
+                            if i > 0:
+                                x += 1
+                                paths[x] = path_orig + [p_index]
+                                if p_index not in path_orig:
+                                    active_keys.append(x)
+                                else:
+                                    loop = path_orig[path_orig.index(p_index):] + [p_index]
+
+                                    in_loop = []
+                                    for i in range(len(loop)-1):
+                                        segment = (loop[i], loop[i + 1])
+                                        segment_r = (loop[i+1], loop[i])
+                                        in_loop.append((segment not in cuts) and (segment_r not in cuts))
+
+                                    if all(in_loop):
+                                        loops.append(loop)
+                                        cut = find_cut(loop, cost_streets)
+                                        cuts.append(cut)
+
+                                        street_index = [streets[(cut[0], cut[1])] for cut in cuts]
+                                        f, ax = plt.subplots()
+                                        roads.plot(ax=ax)
+                                        roads.loc[street_index].plot(ax=ax, color='r')
+                                        plt.show()
+
                         else:
-                            if finished_points.count(p_index) < 20:
-                                print('more than 20 times')
-                            if p_index in loops[key]:
-                                finished_points.extend(loops[key][loops[key].index(p_index):])
-                                real_loops.append(loops[key][loops[key].index(p_index):] + [p_index])
-                            loops[key].append(p_index)
                             active_keys.remove(key)
-                            finished_keys.append(key)
-                    if i>0:
-                        x += 1
-                        loop_orig = loops[key][:-1]
-                        loops[x] = loop_orig + [p_index]
-                        if (p_index not in loop_orig) and (finished_points.count(p_index) < 20):
-                            active_keys.append(x)
-                        else:
-                            if finished_points.count(p_index) < 20:
-                                print('more than 20 times')
-                            finished_keys.append(x)
-                            if p_index in loop_orig:
-                                finished_points.extend(loop_orig[loop_orig.index(p_index):])
-                                real_loops.append(loop_orig[loop_orig.index(p_index):] + [p_index])
 
-unique_loops = set(tuple(i) for i in real_loops)
+    return 'finished'
+        # for key in active_keys:
 
-f, ax = plt.subplots()
-for loop in unique_loops:
-    points_unique_geometry.loc[list(loop)].plot(ax=ax)
-roads.plot(ax=ax)
-plt.show()
+def find_cut(loop, cost_streets):
+    costs_segments_in_loop = []
+    for i in range(len(loop) - 1):
+        costs_segments_in_loop.append(cost_streets[loop[i], loop[i+1]])
 
-print(len(unique_loops))
+    index_exp = np.argmax(costs_segments_in_loop)
+    return loop[index_exp], loop[index_exp + 1]
+
+
+
+
+find_loops(p2p, index_bron)
+
 
 
 
