@@ -6,54 +6,83 @@ from pandas.io.json import json_normalize
 import json
 import io
 from utils import split_line_with_points
+import random
 
 
 crs = {'init': 'epsg:28992'}
 
 
-# points_with_house_and_source = gpd.read_file('../data/loops_district/Aansluitpunten.geojson')
-# points_with_house = points_with_house_and_source[points_with_house_and_source['pandidentificatie'] != 'BRON']
-# points_with_house.loc[:, 'pandidentificatie'] = [str(p[1:]) for p in points_with_house['pandidentificatie']]
-# index_bron = points_with_house_and_source[points_with_house_and_source['pandidentificatie'] == 'BRON'].index.values[0]
-#
-# junctions = gpd.read_file('../data/loops_district/Kruispunten.geojson')
-# points = pd.concat([points_with_house_and_source, junctions], ignore_index=True, sort=False)
-roads = gpd.read_file('../data/loops_district/Wegen.geojson')
-#
-# # points_unique_geometry.geometry = [geom.centroid for geom in points_unique_geometry.geometry]
-#
-# #see what point are so near to one another that they should be treated as one
-# point_same = {}
-# unique_points = []
-# for index, point in points.iterrows():
-#     point_list = []
-#     if index not in unique_points:
-#         for index2, point2 in points.iterrows():
-#             if point.geometry.distance(point2.geometry) < 1e-1 and index != index2:
-#                 point_list.append(index2)
-#                 if index2 not in unique_points:
-#                    unique_points.append(index2)
-#     point_same[index] = point_list
-#
-# # get all panden together on that single point
-# panden={}
-# to_remove = []
-# for key in point_same.keys():
-#     if point_same[key]:
-#        andere_panden = [i for i in points.loc[point_same[key], 'pandidentificatie'].values if i is not None]
-#        eigen_pand = points.loc[key,  'pandidentificatie']
-#        if eigen_pand is not None:
-#            andere_panden.append(eigen_pand)
-#        panden[key] = str(andere_panden)
-#        to_remove.extend(point_same[key])
-#     else:
-#        panden[key] = "[]"
-#
-# alle_panden = pd.Series(panden, name='alle_panden')
-# points_unique_geometry = pd.concat([points, alle_panden], axis=1)
-# points_unique_geometry = points_unique_geometry.drop(to_remove).reset_index()
+points_with_house_and_source = gpd.read_file('../data/loops_district/Aansluitpunten.geojson')
+all_points = gpd.read_file('../data/loops_district/Kruispunten.geojson')
 
-points_unique_geometry = gpd.read_file('./point_unique_geometry.geojson')
+# unique_point_index = []
+# for index, point in all_points.iterrows():
+#     for index2, point2 in points_with_house_and_source.iterrows():
+#          if point.geometry.distance(point2.geometry) < 1e-1:
+#              break
+#     if index2 == points_with_house_and_source.index[-1]:
+#         unique_point_index.append(index)
+#
+#
+#
+# junctions = all_points.loc[unique_point_index].reset_index()
+
+
+points_with_house = points_with_house_and_source[points_with_house_and_source['pandidentificatie'] != 'BRON']
+points_with_house.loc[:, 'pandidentificatie'] = [str(p[1:]) for p in points_with_house['pandidentificatie']]
+
+
+price_threshold = []
+for index in points_with_house_and_source.index:
+    if points_with_house_and_source.loc[index, 'pandidentificatie'] != 'BRON':
+        price_threshold.append(random.randint(50, 60))
+    else:
+        price_threshold.append(999)
+points_with_house_and_source['threshold'] = price_threshold
+points_with_house_and_source = points_with_house_and_source[points_with_house_and_source.threshold >= 58]
+points_with_house_and_source.reset_index(drop=True)
+
+junctions = gpd.read_file('../data/loops_district/real_junctions.geojson')
+points = pd.concat([points_with_house_and_source, junctions], ignore_index=True, sort=False)
+roads = gpd.read_file('../data/loops_district/Wegen.geojson')
+
+# points_unique_geometry.geometry = [geom.centroid for geom in points_unique_geometry.geometry]
+
+#see what point are so near to one another that they should be treated as one
+point_same = {}
+unique_points = []
+for index, point in points.iterrows():
+    point_list = []
+    if index not in unique_points:
+        for index2, point2 in points.iterrows():
+            if point.geometry.distance(point2.geometry) < 1e-1 and index != index2:
+                point_list.append(index2)
+                if index2 not in unique_points:
+                   unique_points.append(index2)
+    point_same[index] = point_list
+
+# get all panden together on that single point
+panden={}
+to_remove = []
+for key in point_same.keys():
+    if point_same[key]:
+       andere_panden = [i for i in points.loc[point_same[key], 'pandidentificatie'].values if i is not None]
+       eigen_pand = points.loc[key,  'pandidentificatie']
+       if eigen_pand is not None:
+           andere_panden.append(eigen_pand)
+       panden[key] = str(andere_panden)
+       to_remove.extend(point_same[key])
+    else:
+       panden[key] = "[]"
+
+alle_panden = pd.Series(panden, name='alle_panden')
+points_unique_geometry = pd.concat([points, alle_panden], axis=1)
+points_unique_geometry = points_unique_geometry.drop(to_remove).reset_index()
+
+print('prepared geometry')
+# points_unique_geometry = gpd.read_file('./point_unique_geometry.geojson')
+
+
 
 # see what roads contain multiple points (roads that do not go only from one to another point)
 long_roads = {}
@@ -94,6 +123,7 @@ roads = pd.concat([gdf_small_roads, gdf_long_roads_split], axis=0, ignore_index=
 
 points_in_road = np.zeros((len(roads.geometry),len(points_unique_geometry.geometry)), dtype=np.int16)
 points_in_road_short = np.ones((len(roads.geometry),2),dtype=np.int16)*-1
+
 
 for i, road in enumerate(roads.geometry):
     x = 0
@@ -144,6 +174,7 @@ def find_loops(p2p, index_bron):
     loops = []
 
     while len(active_keys) > 0:
+        print('loops_found:', len(loops))
         rounds = active_keys.copy()
         for key in rounds:
             path_orig = paths[key].copy()
@@ -182,7 +213,6 @@ def find_loops(p2p, index_bron):
                         else:
                             if key in active_keys:
                                 active_keys.remove(key)
-
     return cuts
         # for key in active_keys:
 
@@ -198,11 +228,13 @@ def find_cut(loop, cost_streets):
 def plot_loop(roads, cuts):
     street_index = [streets[(cut[0], cut[1])] for cut in cuts]
     f, ax = plt.subplots()
-    roads.plot(ax=ax)
-    roads.loc[street_index].plot(ax=ax, color='r')
+    roads_to_plot = list(set(roads.index) - set(street_index))
+    roads.loc[roads_to_plot].plot(ax=ax)
+    points_unique_geometry.plot(ax=ax, color='r')
     plt.show()
 
 cuts = find_loops(p2p, index_bron)
+plot_loop(roads, cuts)
 print(cuts)
 
 
