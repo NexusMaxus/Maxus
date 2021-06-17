@@ -134,6 +134,7 @@ print(p2p)
 index_bron =  points_unique_geometry[points_unique_geometry['pandidentificatie'] == 'BRON'].index.values[0]
 
 
+
 def find_loops(p2p, index_bron):
     paths = {}
     x = 0
@@ -155,58 +156,34 @@ def find_loops(p2p, index_bron):
                 else:
                     for i, p_index in enumerate(p_conn[p_conn != path_orig[-2]]):
                         if ((path_orig[-1], p_index) not in cuts) and ((p_index, path_orig[-1]) not in cuts):
-                            if i == 0:
+
+                            if i == 0:  # continue existing path
                                 if p_index not in paths[key]:
                                     paths[key].append(p_index)
                                 else:
-                                    loop = path_orig[path_orig.index(p_index):] + [p_index]
                                     active_keys.remove(key)
-                                    in_loop = []
-                                    for i in range(len(loop)-1):
-                                        segment = (loop[i], loop[i + 1])
-                                        segment_r = (loop[i+1], loop[i])
-                                        in_loop.append((segment not in cuts) and (segment_r not in cuts))
-
-                                    if all(in_loop):
+                                    loop = path_orig[path_orig.index(p_index):] + [p_index]
+                                    if (loop not in loops) and (loop.reverse() not in loops):
                                         loops.append(loop)
                                         cut = find_cut(loop, cost_streets)
                                         cuts.append(cut)
 
-                                        street_index = [streets[(cut[0], cut[1])] for cut in cuts]
-                                        f, ax = plt.subplots()
-                                        roads.plot(ax=ax)
-                                        roads.loc[street_index].plot(ax=ax, color='r')
-                                        plt.show()
-
-                            if i > 0:
+                            if i > 0:   # start new path if not loop
                                 x += 1
                                 paths[x] = path_orig + [p_index]
                                 if p_index not in path_orig:
                                     active_keys.append(x)
                                 else:
                                     loop = path_orig[path_orig.index(p_index):] + [p_index]
-
-                                    in_loop = []
-                                    for i in range(len(loop)-1):
-                                        segment = (loop[i], loop[i + 1])
-                                        segment_r = (loop[i+1], loop[i])
-                                        in_loop.append((segment not in cuts) and (segment_r not in cuts))
-
-                                    if all(in_loop):
+                                    if (loop not in loops) and (loop.reverse() not in loops):
                                         loops.append(loop)
                                         cut = find_cut(loop, cost_streets)
                                         cuts.append(cut)
-
-                                        street_index = [streets[(cut[0], cut[1])] for cut in cuts]
-                                        f, ax = plt.subplots()
-                                        roads.plot(ax=ax)
-                                        roads.loc[street_index].plot(ax=ax, color='r')
-                                        plt.show()
-
                         else:
-                            active_keys.remove(key)
+                            if key in active_keys:
+                                active_keys.remove(key)
 
-    return 'finished'
+    return cuts
         # for key in active_keys:
 
 def find_cut(loop, cost_streets):
@@ -218,9 +195,15 @@ def find_cut(loop, cost_streets):
     return loop[index_exp], loop[index_exp + 1]
 
 
+def plot_loop(roads, cuts):
+    street_index = [streets[(cut[0], cut[1])] for cut in cuts]
+    f, ax = plt.subplots()
+    roads.plot(ax=ax)
+    roads.loc[street_index].plot(ax=ax, color='r')
+    plt.show()
 
-
-find_loops(p2p, index_bron)
+cuts = find_loops(p2p, index_bron)
+print(cuts)
 
 
 
