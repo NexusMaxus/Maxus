@@ -224,8 +224,6 @@ while len(active_keys) > 0:
                 junctions_branched_profit[paths[key][-1]][p_index] = profit[key]
                 junctions_branched_points[paths[key][-1]][p_index] = paths[key][:-1]
 
-                x += 1
-
                 if all(junctions_branched_status[paths[key][-1]]):
                     x += 1
                     paths[x] = [item for sublist in junctions_branched_points[paths[key][-1]] for item in sublist] + [paths[key][-1]]
