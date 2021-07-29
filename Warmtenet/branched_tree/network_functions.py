@@ -5,6 +5,7 @@ import pandas as pd
 from shapely.geometry import MultiPoint, LineString
 from utils import split_line_with_points
 
+
 def create_unique_points_and_merge_panden(points: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     """
 
@@ -63,7 +64,18 @@ def _find_overlapping_points_in_network(points: gpd.GeoDataFrame) -> Dict[int, L
 
 
 def _merge_buildings_to_create_unique_points(points: gpd.GeoDataFrame, same_points: Dict[int, List[int]]) -> gpd.GeoDataFrame:
-    # get all panden together on that single point
+    """
+    get all panden together on that single point
+
+    Parameters
+    ----------
+    points
+    same_points
+
+    Returns
+    -------
+
+    """
     panden = {}
     to_remove = []
     for index, point in points.iterrows():
@@ -206,20 +218,19 @@ def get_all_connected_points(connections, points):
     return points_in_road_short
 
 
-def get_unique_junctions(all_points, points_with_house_and_source):
-    unique_point_index = []
-    for index, point in all_points.iterrows():
-        for index2, point2 in points_with_house_and_source.iterrows():
-             if point.geometry.distance(point2.geometry) < 1e-1:
-                 break
-        if index2 == points_with_house_and_source.index[-1]:
-            unique_point_index.append(index)
-
-    junctions = all_points.loc[unique_point_index]
-    return junctions
-
-
 def store_connected_points_per_point(connected_points, connections):
+    """
+    makes a dictionary of all points that are connected to the point at issue for each point
+
+    Parameters
+    ----------
+    connected_points
+    connections
+
+    Returns
+    -------
+
+    """
     p2p = {}
     cost_streets = {}
     streets = {}
