@@ -5,163 +5,49 @@ import matplotlib.pyplot as plt
 from pandas.io.json import json_normalize
 import json
 import io
-from utils import split_line_with_points
+
 import random
-
-
-crs = {'init': 'epsg:28992'}
-
+from branched_tree.network_functions import create_unique_points_and_merge_panden, \
+    get_all_connections, get_all_connected_points, store_connected_points_per_point
 
 points_with_house_and_source = gpd.read_file('../data/loops_district/Aansluitpunten.geojson')
-all_points = gpd.read_file('../data/loops_district/Kruispunten.geojson')
-
-# unique_point_index = []
-# for index, point in all_points.iterrows():
-#     for index2, point2 in points_with_house_and_source.iterrows():
-#          if point.geometry.distance(point2.geometry) < 1e-1:
-#              break
-#     if index2 == points_with_house_and_source.index[-1]:
-#         unique_point_index.append(index)
-#
-#
-#
-# junctions = all_points.loc[unique_point_index].reset_index()
-
-
+# all_points = gpd.read_file('../data/loops_district/Kruispunten.geojson')
 points_with_house = points_with_house_and_source[points_with_house_and_source['pandidentificatie'] != 'BRON']
 points_with_house.loc[:, 'pandidentificatie'] = [str(p[1:]) for p in points_with_house['pandidentificatie']]
 
-
+# generate price for each house
 price_threshold = []
 for index in points_with_house_and_source.index:
     if points_with_house_and_source.loc[index, 'pandidentificatie'] != 'BRON':
         price_threshold.append(random.randint(50, 60))
     else:
         price_threshold.append(999)
+
+# select houses above price threshold
 points_with_house_and_source['threshold'] = price_threshold
 points_with_house_and_source = points_with_house_and_source[points_with_house_and_source.threshold >= 58]
-points_with_house_and_source.reset_index(drop=True)
 
+# load junctions and put all selected points in dataframe
 junctions = gpd.read_file('../data/loops_district/real_junctions.geojson')
 points = pd.concat([points_with_house_and_source, junctions], ignore_index=True, sort=False)
+
+# load roads
 roads = gpd.read_file('../data/loops_district/Wegen.geojson')
 
-# points_unique_geometry.geometry = [geom.centroid for geom in points_unique_geometry.geometry]
+# see what point are so near to one another that they should be treated as one
+points_unique_geometry = create_unique_points_and_merge_panden(points)
 
-#see what point are so near to one another that they should be treated as one
-point_same = {}
-unique_points = []
-for index, point in points.iterrows():
-    point_list = []
-    if index not in unique_points:
-        for index2, point2 in points.iterrows():
-            if point.geometry.distance(point2.geometry) < 1e-1 and index != index2:
-                point_list.append(index2)
-                if index2 not in unique_points:
-                   unique_points.append(index2)
-    point_same[index] = point_list
-
-# get all panden together on that single point
-panden={}
-to_remove = []
-for key in point_same.keys():
-    if point_same[key]:
-       andere_panden = [i for i in points.loc[point_same[key], 'pandidentificatie'].values if i is not None]
-       eigen_pand = points.loc[key,  'pandidentificatie']
-       if eigen_pand is not None:
-           andere_panden.append(eigen_pand)
-       panden[key] = str(andere_panden)
-       to_remove.extend(point_same[key])
-    else:
-       panden[key] = "[]"
-
-alle_panden = pd.Series(panden, name='alle_panden')
-points_unique_geometry = pd.concat([points, alle_panden], axis=1)
-points_unique_geometry = points_unique_geometry.drop(to_remove).reset_index()
-
-print('prepared geometry')
 # points_unique_geometry = gpd.read_file('./point_unique_geometry.geojson')
+connections = get_all_connections(roads=roads, points=points_unique_geometry)
 
-
-
-# see what roads contain multiple points (roads that do not go only from one to another point)
-long_roads = {}
-road_point_count = np.zeros(roads.shape[0], dtype=int)
-
-for i, road in enumerate(roads.geometry):
-    x = 0
-    p_array = []
-    for j, point in enumerate(points_unique_geometry.geometry):
-        if road.distance(point) < 1e-1:
-            x += 1
-            p_array.append(j)
-    if x > 2:
-        long_roads[i] = p_array
-    road_point_count[i] = x
-
-# split roads that contain multiple points in smaller parts
-smaller_parts = []
-for road_number, segment in long_roads.items():
-    points_in_long_road = []
-    distance = []
-    for j in segment:
-        distance.append(roads.geometry[road_number].project(points_unique_geometry.geometry[j]))
-        points_in_long_road.append(points_unique_geometry.geometry[j])
-
-    df_points_in_road = pd.DataFrame({'dis': distance})
-    points_gpd = gpd.GeoDataFrame(df_points_in_road , crs=crs, geometry=points_in_long_road)
-    points_gpd.sort_values('dis', inplace=True)
-    points_gpd.reset_index(drop=True, inplace=True)
-    smaller_parts.extend(split_line_with_points(roads.geometry[road_number], points_gpd.geometry[1:-1]))
-
-# merge split roads with other roads
-roads.drop(axis=0, index=long_roads.keys(), inplace=True)
-gdf_long_roads_split = gpd.GeoDataFrame(crs=crs, geometry=smaller_parts)
-gdf_small_roads = gpd.GeoDataFrame(crs=crs, geometry=roads.geometry)
-roads = pd.concat([gdf_small_roads, gdf_long_roads_split], axis=0, ignore_index=True, sort=False)
-
-
-points_in_road = np.zeros((len(roads.geometry),len(points_unique_geometry.geometry)), dtype=np.int16)
-points_in_road_short = np.ones((len(roads.geometry),2),dtype=np.int16)*-1
-
-
-for i, road in enumerate(roads.geometry):
-    x = 0
-    for j, point in enumerate(points_unique_geometry.geometry):
-        if road.distance(point) < 1e-1:
-            points_in_road[i, j] = 1
-            points_in_road_short[i, x] = j
-            x += 1
+connected_points = get_all_connected_points(connections=connections, points=points_unique_geometry)
 
 # see what points can connect to other points
-p2p = {}
-cost_streets = {}
-streets = {}
-
-for i in range(len(points_in_road_short)):
-    if np.logical_and(points_in_road_short[i, 0] != -1, points_in_road_short[i, 1] != -1):
-        if points_in_road_short[i, 0] not in p2p.keys():
-            p2p[points_in_road_short[i, 0]] = [points_in_road_short[i, 1]]
-            cost_streets[(points_in_road_short[i,0], points_in_road_short[i, 1])] = roads.geometry[i].length * 100
-            streets[(points_in_road_short[i, 0], points_in_road_short[i, 1])] = i
-        else:
-            p2p[points_in_road_short[i, 0]].append(points_in_road_short[i, 1])
-            cost_streets[(points_in_road_short[i, 0], points_in_road_short[i, 1])] = roads.geometry[i].length * 100
-            streets[(points_in_road_short[i, 0], points_in_road_short[i, 1])] = i
-
-        if points_in_road_short[i, 1] not in p2p.keys():
-            p2p[points_in_road_short[i, 1]] = [points_in_road_short[i, 0]]
-            cost_streets[(points_in_road_short[i, 1], points_in_road_short[i, 0])] = roads.geometry[i].length * 100
-            streets[(points_in_road_short[i, 1], points_in_road_short[i, 0])] = i
-        else:
-            p2p[points_in_road_short[i, 1]].append(points_in_road_short[i, 0])
-            cost_streets[(points_in_road_short[i, 1], points_in_road_short[i, 0])] = roads.geometry[i].length * 100
-            streets[(points_in_road_short[i, 1], points_in_road_short[i, 0])] = i
-
+p2p, streets, cost_streets = store_connected_points_per_point(connected_points, connections)
 # cut_loops
 print(p2p)
 
-index_bron =  points_unique_geometry[points_unique_geometry['pandidentificatie'] == 'BRON'].index.values[0]
+index_bron = points_unique_geometry[points_unique_geometry['pandidentificatie'] == 'BRON'].index.values[0]
 
 
 
@@ -230,11 +116,12 @@ def plot_loop(roads, cuts):
     f, ax = plt.subplots()
     roads_to_plot = list(set(roads.index) - set(street_index))
     roads.loc[roads_to_plot].plot(ax=ax)
+    # roads.loc[roads_to_plot].to_file('~/PycharmProjects/Maxus/Warmtenet/data/loops_district/output_cut_network.geojson', driver='GeoJSON')
     points_unique_geometry.plot(ax=ax, color='r')
     plt.show()
 
 cuts = find_loops(p2p, index_bron)
-plot_loop(roads, cuts)
+plot_loop(connections, cuts)
 print(cuts)
 
 
