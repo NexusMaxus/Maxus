@@ -202,7 +202,7 @@ while len(active_keys) > 0:
                     active_keys.pop(key)
                     print('profit:', profit[key])
 
-            if len(p2p[paths[key][-1]]) == 2:
+            elif len(p2p[paths[key][-1]]) == 2:
                 next_point = None
                 for point in p2p[paths[key][-1]]:
                     if (point != p2p[paths[key][-2]]) and (point != finished_points):
@@ -213,7 +213,7 @@ while len(active_keys) > 0:
                 else:
                     raise ValueError(f'couldnt find next point for {paths[key][-1]}')
 
-            if len(p2p[paths[key][-1]]) > 2:
+            elif len(p2p[paths[key][-1]]) > 2:
                 active_keys.pop(key)
                 finished_points.extend(paths[key][:-2])
                 p_index = p2p[paths[key][-1]].index[paths[key][:-2]]
