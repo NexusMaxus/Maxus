@@ -29,7 +29,7 @@ warmtevraag = []
 for index in points_with_house_and_source.index:
     if points_with_house_and_source.loc[index, 'pandidentificatie'] != 'BRON':
         price_threshold.append(random.randint(50, 60))
-        warmtevraag.append(random.randint(10, 20))
+        warmtevraag.append(random.randint(100, 150))
     else:
         price_threshold.append(999)
         warmtevraag.append(0)
@@ -151,6 +151,7 @@ print(cuts)
 new_connected_points = get_all_connected_points(new_connections, points_unique_geometry)
 p2p, streets_branched, cost_streets_branched = store_connected_points_per_point(new_connected_points, connections)
 end_point_branches = {key: value for key, value in p2p.items() if len(value) == 1}
+end_point_branches.pop(index_bron)
 junctions_branched = {key: value for key, value in p2p.items() if len(value) > 2}
 junctions_branched_status = {key: [False for v in value] for key, value in junctions_branched.items()}
 junctions_branched_income = {key: [0 for v in value] for key, value in junctions_branched.items()}
@@ -205,18 +206,18 @@ while len(active_keys) > 0:
             elif len(p2p[paths[key][-1]]) == 2:
                 next_point = None
                 for point in p2p[paths[key][-1]]:
-                    if (point != p2p[paths[key][-2]]) and (point != finished_points):
+                    if (point != p2p[paths[key][-2]]) and (point not in finished_points):
                         next_point = point
 
                 if next_point is not None:
-                    paths[key].extend(next_point)
+                    paths[key].append(next_point)
                 else:
                     raise ValueError(f'couldnt find next point for {paths[key][-1]}')
 
             elif len(p2p[paths[key][-1]]) > 2:
                 active_keys.pop(key)
                 finished_points.extend(paths[key][:-1])
-                p_index = p2p[paths[key][-1]].index[paths[key][:-1]]
+                p_index = p2p[paths[key][-1]].index(paths[key][:-1])
                 junctions_branched_status[paths[key][-1]][p_index] = True
                 junctions_branched_income[paths[key][-1]][p_index] = income[key]
                 junctions_branched_cost[paths[key][-1]][p_index] = cost[key]
