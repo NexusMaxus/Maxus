@@ -85,17 +85,17 @@ def _merge_buildings_to_create_unique_points(points: gpd.GeoDataFrame, same_poin
             if eigen_pand is not None:
                 andere_panden.append(eigen_pand)
             if not andere_panden:
-                panden[index] = str([])
+                panden[index] = []
             else:
-                panden[index] = str(andere_panden)
+                panden[index] = andere_panden
             to_remove.extend(same_points[index])
             for key in same_points[index]:
                 same_points.pop(key)
         else:
             if eigen_pand is not None:
-                panden[index] = str([eigen_pand])
+                panden[index] = [eigen_pand]
             else:
-                panden[index] = str([])
+                panden[index] = []
 
     alle_panden = pd.Series(panden, name='panden')
     points_unique_geometry = pd.concat([points, alle_panden], axis=1)

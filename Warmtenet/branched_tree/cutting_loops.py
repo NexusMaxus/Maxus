@@ -188,8 +188,8 @@ while len(active_keys) > 0:
             active_keys.pop(key)
             x += 1
             paths[x] = [paths[key][-1]]
-            finished_points.extend(paths[key][:-2])
-            losing_points.extend(paths[key][:-2])
+            finished_points.extend(paths[key][:-1])
+            losing_points.extend(paths[key][:-1])
             active_keys.append(x)
 
         else:
@@ -215,13 +215,13 @@ while len(active_keys) > 0:
 
             elif len(p2p[paths[key][-1]]) > 2:
                 active_keys.pop(key)
-                finished_points.extend(paths[key][:-2])
-                p_index = p2p[paths[key][-1]].index[paths[key][:-2]]
+                finished_points.extend(paths[key][:-1])
+                p_index = p2p[paths[key][-1]].index[paths[key][:-1]]
                 junctions_branched_status[paths[key][-1]][p_index] = True
                 junctions_branched_income[paths[key][-1]][p_index] = income[key]
                 junctions_branched_cost[paths[key][-1]][p_index] = cost[key]
                 junctions_branched_profit[paths[key][-1]][p_index] = profit[key]
-                junctions_branched_points[paths[key][-1]][p_index] = paths[key][:-2]
+                junctions_branched_points[paths[key][-1]][p_index] = paths[key][:-1]
 
                 x += 1
 
