@@ -208,7 +208,7 @@ def get_all_connected_points(connections, points):
     """
     points_in_road_short = np.ones((len(connections.geometry), 2), dtype=np.int16) * -1
 
-    for i, road in connections.geometry.items():
+    for i, road in enumerate(connections.geometry):
         x = 0
         for j, point in points.geometry.items():
             if road.distance(point) < 1e-1:

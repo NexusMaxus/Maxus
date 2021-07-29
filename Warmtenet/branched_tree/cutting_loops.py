@@ -2,13 +2,11 @@ import geopandas as gpd
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from pandas.io.json import json_normalize
-import json
-import io
 
 import random
 from branched_tree.network_functions import create_unique_points_and_merge_panden, \
     get_all_connections, get_all_connected_points, store_connected_points_per_point
+from branched_tree.profit_functions import calculate_revenue
 
 points_with_house_and_source = gpd.read_file('../data/loops_district/Aansluitpunten.geojson')
 all_points = gpd.read_file('../data/loops_district/Kruispunten.geojson')
@@ -27,14 +25,18 @@ points_with_house.loc[:, 'pandidentificatie'] = [str(p[1:]) for p in points_with
 
 # generate price for each house
 price_threshold = []
+warmtevraag = []
 for index in points_with_house_and_source.index:
     if points_with_house_and_source.loc[index, 'pandidentificatie'] != 'BRON':
         price_threshold.append(random.randint(50, 60))
+        warmtevraag.append(random.randint(10, 20))
     else:
         price_threshold.append(999)
+        warmtevraag.append(0)
 
 # select houses above price threshold
 points_with_house_and_source['threshold'] = price_threshold
+points_with_house_and_source['warmtevraag'] = warmtevraag
 points_with_house_and_source = points_with_house_and_source[points_with_house_and_source.threshold >= 58]
 
 # load junctions and put all selected points in dataframe
@@ -58,6 +60,7 @@ print(p2p)
 
 index_bron = points_unique_geometry[points_unique_geometry['pandidentificatie'] == 'BRON'].index.values[0]
 
+
 def find_loops(p2p, index_bron):
     paths = {}
     x = 0
@@ -65,8 +68,20 @@ def find_loops(p2p, index_bron):
     active_keys = [x]
     cuts = []
     loops = []
+    number_in_row = 0
+    num_loops = 0
 
     while len(active_keys) > 0:
+        if num_loops == len(loops):
+            number_in_row += 1
+        else:
+            number_in_row = 0
+
+        if number_in_row > 50:
+            break
+
+        num_loops = len(loops)
+
         print('loops_found:', len(loops))
         rounds = active_keys.copy()
         for key in rounds:
@@ -118,19 +133,101 @@ def find_cut(loop, cost_streets):
     return loop[index_exp], loop[index_exp + 1]
 
 
-def plot_loop(roads, cuts):
-    street_index = [streets[(cut[0], cut[1])] for cut in cuts]
+def plot_loop(new_connections):
     f, ax = plt.subplots()
-    roads_to_plot = list(set(roads.index) - set(street_index))
-    roads.loc[roads_to_plot].plot(ax=ax)
+    new_connections.plot(ax=ax)
     # roads.loc[roads_to_plot].to_file('~/PycharmProjects/Maxus/Warmtenet/data/loops_district/output_cut_network.geojson', driver='GeoJSON')
     points_unique_geometry.plot(ax=ax, color='r')
     plt.show()
 
+
 cuts = find_loops(p2p, index_bron)
-plot_loop(connections, cuts)
+street_index = [streets[(cut[0], cut[1])] for cut in cuts]
+streets_branched = list(set(connections.index) - set(street_index))
+new_connections = connections.loc[streets_branched]
+plot_loop(new_connections)
 print(cuts)
 
+new_connected_points = get_all_connected_points(new_connections, points_unique_geometry)
+p2p, streets_branched, cost_streets_branched = store_connected_points_per_point(new_connected_points, connections)
+end_point_branches = {key: value for key, value in p2p.items() if len(value) == 1}
+junctions_branched = {key: value for key, value in p2p.items() if len(value) > 2}
+junctions_branched_status = {key: False for key in junctions_branched.items()}
+junctions_branched_income = {key: [0 for v in value] for key, value in junctions_branched.items()}
+junctions_branched_cost = {key: [0 for v in value] for key, value in junctions_branched.items()}
+junctions_branched_profit = {key: [0 for v in value] for key, value in junctions_branched.items()}
+junctions_branched_points =  {key: [[] for v in value] for key, value in junctions_branched.items()}
 
+paths = {}
+income = {}
+cost = {}
+profit = {}
+finished_points = []
+losing_points = []
 
+for x, key in enumerate(end_point_branches.keys()):
+    paths[x] = [key]
+x = len(paths)
 
+active_keys = list(paths.keys())
+
+while len(active_keys) > 0:
+    rounds = active_keys.copy()
+    for key in rounds:
+
+        if len(paths[key]) > 1:
+            income[key] += calculate_revenue(paths[key][-2], points_unique_geometry, points_with_house_and_source)
+            cost[key] += cost[key] + cost_streets_branched[paths[key][-1], paths[key][-2]]
+            profit[key] += income[key] - cost[key]
+        else:
+            profit[key] = 0
+            cost[key] = 0
+            income[key] = 0
+
+        if profit[key] < 0:
+            active_keys.pop(key)
+            x += 1
+            paths[x] = [paths[key][-1]]
+            finished_points.extend(paths[key][:-2])
+            losing_points.extend(paths[key][:-2])
+            active_keys.append(x)
+
+        else:
+            if len(p2p[paths[key][-1]]) == 1:
+                if not p2p[paths[key][-1]] in paths[key]:
+                    next_point = p2p[paths[key][-1]]
+                else:
+                    print('BRON found')
+                    active_keys.pop(key)
+                    print('profit:', profit[key])
+
+            if len(p2p[paths[key][-1]]) == 2:
+                next_point = None
+                for point in p2p[paths[key][-1]]:
+                    if (point != p2p[paths[key][-2]]) and (point != finished_points):
+                        next_point = point
+
+                if next_point is not None:
+                    paths[key].append(next_point)
+                else:
+                    raise ValueError(f'couldnt find next point for {paths[key][-1]}')
+
+            if len(p2p[paths[key][-1]]) > 2:
+                active_keys.pop(key)
+                finished_points.extend(paths[key][:-2])
+                p_index = p2p[paths[key][-1]].index[paths[key][:-2]]
+                junctions_branched_status[paths[key][-1]][p_index] = True
+                junctions_branched_income[paths[key][-1]][p_index] = income[key]
+                junctions_branched_cost[paths[key][-1]][p_index] = cost[key]
+                junctions_branched_profit[paths[key][-1]][p_index] = profit[key]
+                junctions_branched_points[paths[key][-1]][p_index] = paths[key][:-2]
+
+                x += 1
+
+                if all(junctions_branched_status[paths[key][-1]]):
+                    x += 1
+                    paths[x] =   [item for sublist in junctions_branched_points[paths[key][-1]] for item in sublist] + [paths[key][-1]]
+                    income[x] = sum(junctions_branched_income[paths[key][-1]])
+                    cost[x] = sum(junctions_branched_cost[paths[key][-1]])
+                    profit[x] = sum(junctions_branched_profit[paths[key][-1]])
+                    active_keys.append(x)
