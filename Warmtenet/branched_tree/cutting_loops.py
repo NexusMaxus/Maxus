@@ -152,11 +152,11 @@ new_connected_points = get_all_connected_points(new_connections, points_unique_g
 p2p, streets_branched, cost_streets_branched = store_connected_points_per_point(new_connected_points, connections)
 end_point_branches = {key: value for key, value in p2p.items() if len(value) == 1}
 junctions_branched = {key: value for key, value in p2p.items() if len(value) > 2}
-junctions_branched_status = {key: False for key in junctions_branched.items()}
+junctions_branched_status = {key: [False for v in value] for key, value in junctions_branched.items()}
 junctions_branched_income = {key: [0 for v in value] for key, value in junctions_branched.items()}
 junctions_branched_cost = {key: [0 for v in value] for key, value in junctions_branched.items()}
 junctions_branched_profit = {key: [0 for v in value] for key, value in junctions_branched.items()}
-junctions_branched_points =  {key: [[] for v in value] for key, value in junctions_branched.items()}
+junctions_branched_points = {key: [[] for v in value] for key, value in junctions_branched.items()}
 
 paths = {}
 income = {}
@@ -196,6 +196,7 @@ while len(active_keys) > 0:
             if len(p2p[paths[key][-1]]) == 1:
                 if not p2p[paths[key][-1]] in paths[key]:
                     next_point = p2p[paths[key][-1]]
+                    paths[key].extend(next_point)
                 else:
                     print('BRON found')
                     active_keys.pop(key)
@@ -208,7 +209,7 @@ while len(active_keys) > 0:
                         next_point = point
 
                 if next_point is not None:
-                    paths[key].append(next_point)
+                    paths[key].extend(next_point)
                 else:
                     raise ValueError(f'couldnt find next point for {paths[key][-1]}')
 
@@ -226,7 +227,7 @@ while len(active_keys) > 0:
 
                 if all(junctions_branched_status[paths[key][-1]]):
                     x += 1
-                    paths[x] =   [item for sublist in junctions_branched_points[paths[key][-1]] for item in sublist] + [paths[key][-1]]
+                    paths[x] = [item for sublist in junctions_branched_points[paths[key][-1]] for item in sublist] + [paths[key][-1]]
                     income[x] = sum(junctions_branched_income[paths[key][-1]])
                     cost[x] = sum(junctions_branched_cost[paths[key][-1]])
                     profit[x] = sum(junctions_branched_profit[paths[key][-1]])
