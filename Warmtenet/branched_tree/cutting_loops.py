@@ -11,7 +11,17 @@ from branched_tree.network_functions import create_unique_points_and_merge_pande
     get_all_connections, get_all_connected_points, store_connected_points_per_point
 
 points_with_house_and_source = gpd.read_file('../data/loops_district/Aansluitpunten.geojson')
-# all_points = gpd.read_file('../data/loops_district/Kruispunten.geojson')
+all_points = gpd.read_file('../data/loops_district/Kruispunten.geojson')
+
+kruispunten_mask = []
+for cell in all_points.id:
+    if isinstance(cell, str):
+        kruispunten_mask.append('kruispunt' in cell)
+    else:
+        kruispunten_mask.append(False)
+
+junctions = all_points[kruispunten_mask]
+
 points_with_house = points_with_house_and_source[points_with_house_and_source['pandidentificatie'] != 'BRON']
 points_with_house.loc[:, 'pandidentificatie'] = [str(p[1:]) for p in points_with_house['pandidentificatie']]
 
@@ -28,7 +38,6 @@ points_with_house_and_source['threshold'] = price_threshold
 points_with_house_and_source = points_with_house_and_source[points_with_house_and_source.threshold >= 58]
 
 # load junctions and put all selected points in dataframe
-junctions = gpd.read_file('../data/loops_district/real_junctions.geojson')
 points = pd.concat([points_with_house_and_source, junctions], ignore_index=True, sort=False)
 
 # load roads
@@ -48,8 +57,6 @@ p2p, streets, cost_streets = store_connected_points_per_point(connected_points, 
 print(p2p)
 
 index_bron = points_unique_geometry[points_unique_geometry['pandidentificatie'] == 'BRON'].index.values[0]
-
-
 
 def find_loops(p2p, index_bron):
     paths = {}
