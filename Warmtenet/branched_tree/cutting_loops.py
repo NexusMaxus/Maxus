@@ -219,7 +219,7 @@ while len(active_keys) > 0:
                 print('popping key because of junction:', key)
                 active_keys.remove(key)
                 finished_points.extend(paths[key][:-1])
-                p_index = p2p[paths[key][-1]].index(paths[key][:-1])
+                p_index = p2p[paths[key][-1]].index(paths[key][-1])
                 junctions_branched_status[paths[key][-1]][p_index] = True
                 junctions_branched_income[paths[key][-1]][p_index] = income[key]
                 junctions_branched_cost[paths[key][-1]][p_index] = cost[key]
@@ -233,3 +233,9 @@ while len(active_keys) > 0:
                     cost[x] = sum(junctions_branched_cost[paths[key][-1]])
                     profit[x] = sum(junctions_branched_profit[paths[key][-1]])
                     active_keys.append(x)
+
+f, ax = plt.subplots()
+points_unique_geometry.plot(ax=ax)
+points_unique_geometry.loc[losing_points].plot(ax=ax, color='r')
+new_connections.plot(ax=ax)
+plt.show()
