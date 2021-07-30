@@ -188,11 +188,16 @@ while len(active_keys) > 0:
         if profit[key] < 0:
             print('popping key because of profit:', key)
             active_keys.remove(key)
-            x += 1
-            paths[x] = [paths[key][-1]]
-            finished_points.extend(paths[key][:-1])
-            losing_points.extend(paths[key][:-1])
-            active_keys.append(x)
+            if len(p2p[paths[key][-1]]) > 2:
+                p_index = p2p[paths[key][-1]].index(paths[key][-2])
+                junctions_branched_status[paths[key][-1]][p_index] = True
+            else:
+                x += 1
+                paths[x] = [paths[key][-1]]
+                finished_points.extend(paths[key][:-1])
+                losing_points.extend(paths[key][:-1])
+                active_keys.append(x)
+
 
         else:
             if len(p2p[paths[key][-1]]) == 1:
