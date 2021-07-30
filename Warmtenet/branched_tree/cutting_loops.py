@@ -201,7 +201,7 @@ while len(active_keys) > 0:
                     paths[key].extend(next_point)
                 else:
                     print('BRON found')
-                    active_keys.pop(key)
+                    active_keys.remove(key)
                     print('profit:', profit[key])
 
             elif len(p2p[paths[key][-1]]) == 2:
