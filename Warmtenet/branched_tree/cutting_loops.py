@@ -29,7 +29,7 @@ warmtevraag = []
 for index in points_with_house_and_source.index:
     if points_with_house_and_source.loc[index, 'pandidentificatie'] != 'BRON':
         price_threshold.append(random.randint(50, 60))
-        warmtevraag.append(random.randint(100, 150))
+        warmtevraag.append(random.randint(300, 400))
     else:
         price_threshold.append(999)
         warmtevraag.append(0)
@@ -175,7 +175,7 @@ active_keys = list(paths.keys())
 while len(active_keys) > 0:
     rounds = active_keys.copy()
     for key in rounds:
-
+        print('round:', key)
         if len(paths[key]) > 1:
             income[key] += calculate_revenue(paths[key][-2], points_unique_geometry, points_with_house_and_source)
             cost[key] += cost[key] + cost_streets_branched[paths[key][-1], paths[key][-2]]
@@ -186,7 +186,8 @@ while len(active_keys) > 0:
             income[key] = 0
 
         if profit[key] < 0:
-            active_keys.pop(key)
+            print('popping key because of profit:', key)
+            active_keys.remove(key)
             x += 1
             paths[x] = [paths[key][-1]]
             finished_points.extend(paths[key][:-1])
@@ -215,7 +216,8 @@ while len(active_keys) > 0:
                     raise ValueError(f'couldnt find next point for {paths[key][-1]}')
 
             elif len(p2p[paths[key][-1]]) > 2:
-                active_keys.pop(key)
+                print('popping key because of junction:', key)
+                active_keys.remove(key)
                 finished_points.extend(paths[key][:-1])
                 p_index = p2p[paths[key][-1]].index(paths[key][:-1])
                 junctions_branched_status[paths[key][-1]][p_index] = True
