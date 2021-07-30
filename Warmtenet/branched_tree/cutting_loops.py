@@ -211,8 +211,11 @@ while len(active_keys) > 0:
             elif len(p2p[paths[key][-1]]) == 2:
                 next_point = None
                 for point in p2p[paths[key][-1]]:
-                    if (point != paths[key][-2]) and (point not in finished_points):
-                        next_point = point
+                    if point not in finished_points:
+                        if len(paths[key]) == 1:
+                            next_point = point
+                        elif point != paths[key][-2]:
+                            next_point = point
 
                 if next_point is not None:
                     paths[key].append(next_point)
