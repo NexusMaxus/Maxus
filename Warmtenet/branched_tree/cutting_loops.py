@@ -207,7 +207,7 @@ while len(active_keys) > 0:
             elif len(p2p[paths[key][-1]]) == 2:
                 next_point = None
                 for point in p2p[paths[key][-1]]:
-                    if (point != p2p[paths[key][-2]]) and (point not in finished_points):
+                    if (point != paths[key][-2]) and (point not in finished_points):
                         next_point = point
 
                 if next_point is not None:
@@ -219,7 +219,7 @@ while len(active_keys) > 0:
                 print('popping key because of junction:', key)
                 active_keys.remove(key)
                 finished_points.extend(paths[key][:-1])
-                p_index = p2p[paths[key][-1]].index(paths[key][-1])
+                p_index = p2p[paths[key][-1]].index(paths[key][-2])
                 junctions_branched_status[paths[key][-1]][p_index] = True
                 junctions_branched_income[paths[key][-1]][p_index] = income[key]
                 junctions_branched_cost[paths[key][-1]][p_index] = cost[key]
