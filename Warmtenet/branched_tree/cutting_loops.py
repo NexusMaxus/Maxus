@@ -93,6 +93,15 @@ def find_loops(p2p, index_bron):
                 if len(p_conn) == 1:
                     paths[key].append(p_conn[0])
                 else:
+                    if len(p_conn[p_conn == path_orig[-2]]) == 2:
+                        p_index = path_orig[-2]
+                        active_keys.remove(key)
+                        loop = path_orig[path_orig.index(p_index):] + [p_index]
+                        if (loop not in loops) and (loop.reverse() not in loops):
+                            loops.append(loop)
+                            cut = find_cut(loop, cost_streets)
+                            cuts.append(cut)
+
                     for i, p_index in enumerate(p_conn[p_conn != path_orig[-2]]):
                         if ((path_orig[-1], p_index) not in cuts) and ((p_index, path_orig[-1]) not in cuts):
 
@@ -148,6 +157,14 @@ new_connections = connections.loc[streets_branched]
 plot_loop(new_connections)
 print(cuts)
 
+def plot_paths(paths: dict, connections, points):
+    f, ax = plt.subplots()
+    points_unique_geometry.plot(ax=ax, alpha=0.2, color ='grey')
+    connections.plot(ax=ax, color='grey', alpha=0.5)
+    for path in paths.values():
+        points.loc[path].plot(ax=ax)
+    plt.show()
+
 new_connected_points = get_all_connected_points(new_connections, points_unique_geometry)
 p2p, streets_branched, cost_streets_branched = store_connected_points_per_point(new_connected_points, connections)
 end_point_branches = {key: value for key, value in p2p.items() if len(value) == 1}
@@ -174,6 +191,7 @@ active_keys = list(paths.keys())
 
 while len(active_keys) > 0:
     rounds = active_keys.copy()
+    plot_paths(paths, connections=new_connections, points=points_unique_geometry)
     for key in rounds:
         print('round:', key)
         if len(paths[key]) > 1:
@@ -233,7 +251,7 @@ while len(active_keys) > 0:
                 junctions_branched_profit[paths[key][-1]][p_index] = profit[key]
                 junctions_branched_points[paths[key][-1]][p_index] = paths[key][:-1]
 
-                if all(junctions_branched_status[paths[key][-1]]):
+                if len(junctions_branched_status[paths[key][-1]]) - sum(junctions_branched_status[paths[key][-1]]) == 1:
                     x += 1
                     paths[x] = [item for sublist in junctions_branched_points[paths[key][-1]] for item in sublist] + [paths[key][-1]]
                     income[x] = sum(junctions_branched_income[paths[key][-1]])
@@ -246,3 +264,5 @@ points_unique_geometry.plot(ax=ax)
 points_unique_geometry.loc[losing_points].plot(ax=ax, color='r')
 new_connections.plot(ax=ax)
 plt.show()
+
+
