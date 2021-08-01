@@ -241,23 +241,30 @@ while len(active_keys) > 0:
                     raise ValueError(f'couldnt find next point for {paths[key][-1]}')
 
             elif len(p2p[paths[key][-1]]) > 2:
-                print('popping key because of junction:', key)
-                active_keys.remove(key)
-                finished_points.extend(paths[key][:-1])
-                p_index = p2p[paths[key][-1]].index(paths[key][-2])
-                junctions_branched_status[paths[key][-1]][p_index] = True
-                junctions_branched_income[paths[key][-1]][p_index] = income[key]
-                junctions_branched_cost[paths[key][-1]][p_index] = cost[key]
-                junctions_branched_profit[paths[key][-1]][p_index] = profit[key]
-                junctions_branched_points[paths[key][-1]][p_index] = paths[key][:-1]
 
-                if len(junctions_branched_status[paths[key][-1]]) - sum(junctions_branched_status[paths[key][-1]]) == 1:
-                    x += 1
-                    paths[x] = [item for sublist in junctions_branched_points[paths[key][-1]] for item in sublist] + [paths[key][-1]]
-                    income[x] = sum(junctions_branched_income[paths[key][-1]])
-                    cost[x] = sum(junctions_branched_cost[paths[key][-1]])
-                    profit[x] = sum(junctions_branched_profit[paths[key][-1]])
-                    active_keys.append(x)
+                if sum([p in paths[key] for p in p2p[paths[key][-1]]]) > 1:
+                    directions = p2p[paths[key][-1]]
+                    index = junctions_branched_status[paths[key][-1]].index(False)
+                    next_point = directions[index]
+                    paths[key].append(next_point)
+                else:
+                    print('popping key because of junction:', key)
+                    active_keys.remove(key)
+                    finished_points.extend(paths[key][:-1])
+                    p_index = p2p[paths[key][-1]].index(paths[key][-2])
+                    junctions_branched_status[paths[key][-1]][p_index] = True
+                    junctions_branched_income[paths[key][-1]][p_index] = income[key]
+                    junctions_branched_cost[paths[key][-1]][p_index] = cost[key]
+                    junctions_branched_profit[paths[key][-1]][p_index] = profit[key]
+                    junctions_branched_points[paths[key][-1]][p_index] = paths[key][:-1]
+
+                    if len(junctions_branched_status[paths[key][-1]]) - sum(junctions_branched_status[paths[key][-1]]) == 1:
+                        x += 1
+                        paths[x] = [item for sublist in junctions_branched_points[paths[key][-1]] for item in sublist] + [paths[key][-1]]
+                        income[x] = sum(junctions_branched_income[paths[key][-1]])
+                        cost[x] = sum(junctions_branched_cost[paths[key][-1]])
+                        profit[x] = sum(junctions_branched_profit[paths[key][-1]])
+                        active_keys.append(x)
 
 f, ax = plt.subplots()
 points_unique_geometry.plot(ax=ax)
