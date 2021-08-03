@@ -163,7 +163,8 @@ def plot_paths(paths: dict, connections, points):
     connections.plot(ax=ax[0], color='grey', alpha=0.5)
     for k, v in points.iterrows():
         plt.annotate(s=k, xy=v.geometry.coords[:][0])
-    points.loc[paths].plot(ax=ax[0])
+    for k, path in paths.items():
+        points.loc[path].plot(ax=ax[0])
     points.plot(ax=ax[1], alpha=0.2, color ='grey')
     connections.plot(ax=ax[1], color='grey', alpha=0.5)
     points.loc[finished_points].plot(ax=ax[1], color='r')
