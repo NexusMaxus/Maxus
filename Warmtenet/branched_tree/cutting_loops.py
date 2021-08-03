@@ -29,7 +29,7 @@ warmtevraag = []
 for index in points_with_house_and_source.index:
     if points_with_house_and_source.loc[index, 'pandidentificatie'] != 'BRON':
         price_threshold.append(random.randint(50, 60))
-        warmtevraag.append(random.randint(300, 400))
+        warmtevraag.append(random.randint(3000, 4000))
     else:
         price_threshold.append(999)
         warmtevraag.append(0)
@@ -157,17 +157,17 @@ new_connections = connections.loc[streets_branched]
 plot_loop(new_connections)
 print(cuts)
 
-def plot_paths(paths: dict, connections, points):
+def plot_paths(paths: dict, connections, points, losing_points):
     f, ax = plt.subplots(1,2)
     points.plot(ax=ax[0], alpha=0.2, color ='grey')
     connections.plot(ax=ax[0], color='grey', alpha=0.5)
     for k, v in points.iterrows():
-        plt.annotate(s=k, xy=v.geometry.coords[:][0])
+        plt.annotate(s=k, xy=v.geometry.coords[:][0], fontsize = 10)
     for k, path in paths.items():
         points.loc[path].plot(ax=ax[0])
     points.plot(ax=ax[1], alpha=0.2, color ='grey')
     connections.plot(ax=ax[1], color='grey', alpha=0.5)
-    points.loc[finished_points].plot(ax=ax[1], color='r')
+    points.loc[losing_points].plot(ax=ax[1], color='r')
     plt.show()
 
 new_connected_points = get_all_connected_points(new_connections, points_unique_geometry)
@@ -196,13 +196,13 @@ active_keys = list(paths.keys())
 
 while len(active_keys) > 0:
     rounds = active_keys.copy()
-    plot_paths(paths, connections=new_connections, points=points_unique_geometry)
+    plot_paths(paths=paths, connections=new_connections, points=points_unique_geometry, losing_points=losing_points)
     for key in rounds:
         print('round:', key)
         if len(paths[key]) > 1:
             income[key] += calculate_revenue(paths[key][-2], points_unique_geometry, points_with_house_and_source)
-            cost[key] += cost[key] + cost_streets_branched[paths[key][-1], paths[key][-2]]
-            profit[key] += income[key] - cost[key]
+            cost[key] += cost_streets_branched[paths[key][-1], paths[key][-2]]
+            profit[key] = income[key] - cost[key]
         else:
             profit[key] = 0
             cost[key] = 0
@@ -247,7 +247,8 @@ while len(active_keys) > 0:
 
             elif len(p2p[paths[key][-1]]) > 2:
 
-                if (sum([p in paths[key] for p in p2p[paths[key][-1]]]) + sum([p in finished_points for p in p2p[paths[key][-1]]])) > 1:
+                if (sum([p in paths[key] for p in p2p[paths[key][-1]]]) + sum([p in finished_points for p in p2p[paths[key][-1]]])) > 1\
+                        and len(junctions_branched_status[paths[key][-1]]) - sum(junctions_branched_status[paths[key][-1]]) == 1:
                     directions = p2p[paths[key][-1]]
                     index = junctions_branched_status[paths[key][-1]].index(False)
                     next_point = directions[index]
