@@ -159,13 +159,14 @@ print(cuts)
 
 def plot_paths(paths: dict, connections, points):
     f, ax = plt.subplots(1,2)
-    points_unique_geometry.plot(ax=ax[0], alpha=0.2, color ='grey')
+    points.plot(ax=ax[0], alpha=0.2, color ='grey')
     connections.plot(ax=ax[0], color='grey', alpha=0.5)
-    for path in paths.values():
-        points.loc[path].plot(ax=ax[0])
-    points_unique_geometry.plot(ax=ax[1], alpha=0.2, color ='grey')
+    for k, v in points.iterrows():
+        plt.annotate(s=k, xy=v.geometry.coords[:][0])
+    points.loc[paths].plot(ax=ax[0])
+    points.plot(ax=ax[1], alpha=0.2, color ='grey')
     connections.plot(ax=ax[1], color='grey', alpha=0.5)
-    points_unique_geometry.loc[finished_points].plot(ax=ax[1], color='r')
+    points.loc[finished_points].plot(ax=ax[1], color='r')
     plt.show()
 
 new_connected_points = get_all_connected_points(new_connections, points_unique_geometry)
