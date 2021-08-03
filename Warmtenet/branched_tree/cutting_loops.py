@@ -2,7 +2,6 @@ import geopandas as gpd
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-
 import random
 from branched_tree.network_functions import create_unique_points_and_merge_panden, \
     get_all_connections, get_all_connected_points, store_connected_points_per_point
@@ -29,7 +28,7 @@ warmtevraag = []
 for index in points_with_house_and_source.index:
     if points_with_house_and_source.loc[index, 'pandidentificatie'] != 'BRON':
         price_threshold.append(random.randint(50, 60))
-        warmtevraag.append(random.randint(3000, 4000))
+        warmtevraag.append(random.randint(50, 60))
     else:
         price_threshold.append(999)
         warmtevraag.append(0)
@@ -37,7 +36,7 @@ for index in points_with_house_and_source.index:
 # select houses above price threshold
 points_with_house_and_source['threshold'] = price_threshold
 points_with_house_and_source['warmtevraag'] = warmtevraag
-points_with_house_and_source = points_with_house_and_source[points_with_house_and_source.threshold >= 58]
+points_with_house_and_source = points_with_house_and_source[points_with_house_and_source.threshold >= 57]
 
 # load junctions and put all selected points in dataframe
 points = pd.concat([points_with_house_and_source, junctions], ignore_index=True, sort=False)
@@ -47,6 +46,12 @@ roads = gpd.read_file('../data/loops_district/Wegen.geojson')
 
 # see what point are so near to one another that they should be treated as one
 points_unique_geometry = create_unique_points_and_merge_panden(points)
+
+# income
+income = [calculate_revenue(index, points_unique_geometry, points_with_house_and_source)
+          for index, row in points_unique_geometry.iterrows()]
+points_unique_geometry['income'] = income
+
 
 # points_unique_geometry = gpd.read_file('./point_unique_geometry.geojson')
 connections = get_all_connections(roads=roads, points=points_unique_geometry)
@@ -61,29 +66,20 @@ print(p2p)
 index_bron = points_unique_geometry[points_unique_geometry['pandidentificatie'] == 'BRON'].index.values[0]
 
 
-def find_loops(p2p, index_bron):
+def find_loops(p2p, index_bron, connections, plot=False):
     paths = {}
     x = 0
     paths[x] = [index_bron]
     active_keys = [x]
     cuts = []
     loops = []
-    number_in_row = 0
-    num_loops = 0
 
     while len(active_keys) > 0:
-        if num_loops == len(loops):
-            number_in_row += 1
-        else:
-            number_in_row = 0
-
-        if number_in_row > 50:
-            break
-
-        num_loops = len(loops)
 
         print('loops_found:', len(loops))
         rounds = active_keys.copy()
+        if plot:
+            plot_path_loop(paths={k: v for k, v in paths.items() if k in active_keys}, connections=connections, points=points_unique_geometry)
         for key in rounds:
             path_orig = paths[key].copy()
             p_conn = np.array(p2p[path_orig[-1]])
@@ -141,6 +137,13 @@ def find_cut(loop, cost_streets):
     index_exp = np.argmax(costs_segments_in_loop)
     return loop[index_exp], loop[index_exp + 1]
 
+def plot_path_loop(connections, paths, points):
+    f, ax = plt.subplots()
+    points.plot(color='grey', alpha=0.2, ax=ax)
+    connections.plot(ax=ax)
+    for k, path in paths.items():
+        points.loc[path].plot(ax=ax)
+    plt.show()
 
 def plot_loop(new_connections):
     f, ax = plt.subplots()
@@ -150,12 +153,35 @@ def plot_loop(new_connections):
     plt.show()
 
 
-cuts = find_loops(p2p, index_bron)
+cuts = find_loops(p2p, index_bron, connections)
 street_index = [streets[(cut[0], cut[1])] for cut in cuts]
 streets_branched = list(set(connections.index) - set(street_index))
-new_connections = connections.loc[streets_branched]
+new_connections = connections.loc[streets_branched].reset_index()
 plot_loop(new_connections)
 print(cuts)
+
+new_connected_points = get_all_connected_points(new_connections, points_unique_geometry)
+p2p, _, _ = store_connected_points_per_point(new_connected_points, new_connections)
+
+cuts2 = find_loops(p2p, index_bron, new_connections, plot=False)
+cuts = cuts + cuts2
+street_index = [streets[(cut[0], cut[1])] for cut in cuts]
+streets_branched = list(set(connections.index) - set(street_index))
+new_connections = connections.loc[streets_branched].reset_index()
+plot_loop(new_connections)
+
+
+new_connected_points = get_all_connected_points(new_connections, points_unique_geometry)
+p2p, streets_branched, cost_streets_branched = store_connected_points_per_point(new_connected_points, new_connections)
+
+# plot income
+
+f, ax = plt.subplots()
+new_connections.plot(ax=ax)
+points_unique_geometry.plot(ax=ax, column=points_unique_geometry['income'], cmap='YlOrRd', legend=True, vmin=0, vmax=10000)
+plt.show()
+
+# start calculating which houses to drop
 
 def plot_paths(paths: dict, connections, points, losing_points):
     f, ax = plt.subplots(1,2)
@@ -170,8 +196,6 @@ def plot_paths(paths: dict, connections, points, losing_points):
     points.loc[losing_points].plot(ax=ax[1], color='r')
     plt.show()
 
-new_connected_points = get_all_connected_points(new_connections, points_unique_geometry)
-p2p, streets_branched, cost_streets_branched = store_connected_points_per_point(new_connected_points, connections)
 end_point_branches = {key: value for key, value in p2p.items() if len(value) == 1}
 end_point_branches.pop(index_bron)
 junctions_branched = {key: value for key, value in p2p.items() if len(value) > 2}
@@ -196,7 +220,7 @@ active_keys = list(paths.keys())
 
 while len(active_keys) > 0:
     rounds = active_keys.copy()
-    plot_paths(paths=paths, connections=new_connections, points=points_unique_geometry, losing_points=losing_points)
+    # plot_paths(paths=paths, connections=new_connections, points=points_unique_geometry, losing_points=losing_points)
     for key in rounds:
         print('round:', key)
         if len(paths[key]) > 1:
