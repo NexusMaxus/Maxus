@@ -25,10 +25,12 @@ points_with_house.loc[:, 'pandidentificatie'] = [str(p[1:]) for p in points_with
 # generate price for each house
 price_threshold = []
 warmtevraag = []
-for index in points_with_house_and_source.index:
+prices = np.fromfile('prices.dat', dtype=int)
+wvs = np.fromfile('wv.dat', dtype=int)
+for index, price, wv in zip(points_with_house_and_source.index, prices, wvs):
     if points_with_house_and_source.loc[index, 'pandidentificatie'] != 'BRON':
-        price_threshold.append(random.randint(50, 60))
-        warmtevraag.append(random.randint(50, 60))
+        price_threshold.append(price)
+        warmtevraag.append(wv)
     else:
         price_threshold.append(999)
         warmtevraag.append(0)
@@ -39,7 +41,7 @@ points_with_house_and_source['warmtevraag'] = warmtevraag
 points_with_house_and_source = points_with_house_and_source[points_with_house_and_source.threshold >= 57]
 
 # load junctions and put all selected points in dataframe
-points = pd.concat([points_with_house_and_source, junctions], ignore_index=True, sort=False)
+points = pd.concat([points_with_house_and_source, junctions], ignore_index=True, sort=True)
 
 # load roads
 roads = gpd.read_file('../data/loops_district/Wegen.geojson')
@@ -220,7 +222,7 @@ active_keys = list(paths.keys())
 
 while len(active_keys) > 0:
     rounds = active_keys.copy()
-    # plot_paths(paths=paths, connections=new_connections, points=points_unique_geometry, losing_points=losing_points)
+    plot_paths(paths=paths, connections=new_connections, points=points_unique_geometry, losing_points=losing_points)
     for key in rounds:
         print('round:', key)
         if len(paths[key]) > 1:
@@ -296,11 +298,17 @@ while len(active_keys) > 0:
                         cost[x] = sum(junctions_branched_cost[paths[key][-1]])
                         profit[x] = sum(junctions_branched_profit[paths[key][-1]])
                         active_keys.append(x)
+                        keys_to_remove = [k for k, path in paths.items() if path[-1] == paths[key][-1] and k != x and k in active_keys]
+                        for k in keys_to_remove:
+                            active_keys.remove(k)
 
-f, ax = plt.subplots()
-points_unique_geometry.plot(ax=ax)
-points_unique_geometry.loc[losing_points].plot(ax=ax, color='r')
-new_connections.plot(ax=ax)
+f, ax = plt.subplots(1, 2)
+points_unique_geometry.plot(ax=ax[0])
+points_unique_geometry.plot(ax=ax[1])
+points_unique_geometry.loc[losing_points].plot(ax=ax[0], color='r')
+points_unique_geometry.loc[finished_points].plot(ax=ax[1], color='g')
+new_connections.plot(ax=ax[0])
+new_connections.plot(ax=ax[1])
 plt.show()
 
 
