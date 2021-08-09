@@ -27,6 +27,8 @@ price_threshold = []
 warmtevraag = []
 prices = np.fromfile('prices.dat', dtype=int)
 wvs = np.fromfile('wv.dat', dtype=int)
+# prices = np.random.randint(50, 60, len(points_with_house_and_source))
+# wvs = np.random.randint(50, 60, len(points_with_house_and_source))
 for index, price, wv in zip(points_with_house_and_source.index, prices, wvs):
     if points_with_house_and_source.loc[index, 'pandidentificatie'] != 'BRON':
         price_threshold.append(price)
@@ -128,7 +130,7 @@ def find_loops(p2p, index_bron, connections, plot=False):
                         else:
                             if key in active_keys:
                                 active_keys.remove(key)
-    return cuts
+    return cuts, len(loops)
         # for key in active_keys:
 
 def find_cut(loop, cost_streets):
@@ -155,23 +157,26 @@ def plot_loop(new_connections):
     plt.show()
 
 
-cuts = find_loops(p2p, index_bron, connections)
+cuts, number_of_loops = find_loops(p2p, index_bron, connections)
 street_index = [streets[(cut[0], cut[1])] for cut in cuts]
 streets_branched = list(set(connections.index) - set(street_index))
 new_connections = connections.loc[streets_branched].reset_index()
 plot_loop(new_connections)
+iteration = 0
 print(cuts)
 
-new_connected_points = get_all_connected_points(new_connections, points_unique_geometry)
-p2p, _, _ = store_connected_points_per_point(new_connected_points, new_connections)
+while number_of_loops > 0:
+    iteration += 1
+    print(iteration)
+    new_connected_points = get_all_connected_points(new_connections, points_unique_geometry)
+    p2p, _, _ = store_connected_points_per_point(new_connected_points, new_connections)
 
-cuts2 = find_loops(p2p, index_bron, new_connections, plot=False)
-cuts = cuts + cuts2
-street_index = [streets[(cut[0], cut[1])] for cut in cuts]
-streets_branched = list(set(connections.index) - set(street_index))
-new_connections = connections.loc[streets_branched].reset_index()
-plot_loop(new_connections)
-
+    cuts2 = find_loops(p2p, index_bron, new_connections, plot=False)
+    cuts = cuts + cuts2
+    street_index = [streets[(cut[0], cut[1])] for cut in cuts]
+    streets_branched = list(set(connections.index) - set(street_index))
+    new_connections = connections.loc[streets_branched].reset_index()
+    plot_loop(new_connections)
 
 new_connected_points = get_all_connected_points(new_connections, points_unique_geometry)
 p2p, streets_branched, cost_streets_branched = store_connected_points_per_point(new_connected_points, new_connections)
@@ -206,6 +211,7 @@ junctions_branched_income = {key: [0 for v in value] for key, value in junctions
 junctions_branched_cost = {key: [0 for v in value] for key, value in junctions_branched.items()}
 junctions_branched_profit = {key: [0 for v in value] for key, value in junctions_branched.items()}
 junctions_branched_points = {key: [[] for v in value] for key, value in junctions_branched.items()}
+junctions_merging_status = {key: False for key, value in junctions_branched.items()}
 
 paths = {}
 income = {}
@@ -222,9 +228,8 @@ active_keys = list(paths.keys())
 
 while len(active_keys) > 0:
     rounds = active_keys.copy()
-    plot_paths(paths=paths, connections=new_connections, points=points_unique_geometry, losing_points=losing_points)
+    # plot_paths(paths=paths, connections=new_connections, points=points_unique_geometry, losing_points=losing_points)
     for key in rounds:
-        print('round:', key)
         if len(paths[key]) > 1:
             income[key] += calculate_revenue(paths[key][-2], points_unique_geometry, points_with_house_and_source)
             cost[key] += cost_streets_branched[paths[key][-1], paths[key][-2]]
@@ -254,6 +259,7 @@ while len(active_keys) > 0:
                     paths[key].extend(next_point)
                 else:
                     print('BRON found')
+                    finished_points.extend(paths[key])
                     active_keys.remove(key)
                     print('profit:', profit[key])
 
@@ -274,7 +280,7 @@ while len(active_keys) > 0:
             elif len(p2p[paths[key][-1]]) > 2:
 
                 if (sum([p in paths[key] for p in p2p[paths[key][-1]]]) + sum([p in finished_points for p in p2p[paths[key][-1]]])) > 1\
-                        and len(junctions_branched_status[paths[key][-1]]) - sum(junctions_branched_status[paths[key][-1]]) == 1:
+                        and junctions_merging_status[paths[key][-1]]:
                     directions = p2p[paths[key][-1]]
                     index = junctions_branched_status[paths[key][-1]].index(False)
                     next_point = directions[index]
@@ -292,6 +298,7 @@ while len(active_keys) > 0:
                         junctions_branched_points[paths[key][-1]][p_index] = paths[key][:-1]
 
                     if len(junctions_branched_status[paths[key][-1]]) - sum(junctions_branched_status[paths[key][-1]]) == 1:
+                        junctions_merging_status[paths[key][-1]] = True
                         x += 1
                         paths[x] = [item for sublist in junctions_branched_points[paths[key][-1]] for item in sublist] + [paths[key][-1]]
                         income[x] = sum(junctions_branched_income[paths[key][-1]])
@@ -299,7 +306,9 @@ while len(active_keys) > 0:
                         profit[x] = sum(junctions_branched_profit[paths[key][-1]])
                         active_keys.append(x)
                         keys_to_remove = [k for k, path in paths.items() if path[-1] == paths[key][-1] and k != x and k in active_keys]
+                        print(keys_to_remove)
                         for k in keys_to_remove:
+                            print('popping key because of junction, only one path can continue:', k, paths[k])
                             active_keys.remove(k)
 
 f, ax = plt.subplots(1, 2)
@@ -311,4 +320,6 @@ new_connections.plot(ax=ax[0])
 new_connections.plot(ax=ax[1])
 plt.show()
 
+print(wvs)
+print(prices)
 
