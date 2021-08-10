@@ -139,18 +139,20 @@ def find_loops(p2p, index_bron, connections, plot=False):
 
 def find_cut(loop, connections):
     connections_by_points = connections.set_index(['A', 'B'])
+    connections_by_points_reverse = connections.set_index(['B', 'A'])
+    conns_both_directions = connections_by_points.append(connections_by_points_reverse)
     cuts = []
     x = 0
     paths = {x: []}
     roads = {x: []}
     for i in range(len(loop) - 1):
         for key in paths:
-            segments = connections_by_points.loc[loop[i], loop[i+1]]
+            segments = conns_both_directions.loc[loop[i], loop[i+1]]
             if len(segments) > 1:
                 for j, segment in segments.iterrows():
                     x += 1
-                    paths[x] = paths[key] + segment['costs']
-                    roads[x] = roads[key] + segment['geometry']
+                    paths[x] = paths[key].append(segment['costs'])
+                    roads[x] = roads[key].append(segment['geometry'])
             else:
                 paths[key] = paths[key].append(segments['costs'])
                 roads[key] = roads[key].append(segments['geometry'])
