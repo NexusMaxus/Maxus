@@ -232,27 +232,16 @@ def store_connected_points_per_point(connected_points, connections):
 
     """
     p2p = {}
-    cost_streets = {}
-    streets = {}
 
-    for i in range(len(connected_points)):
-        if np.logical_and(connected_points[i, 0] != -1, connected_points[i, 1] != -1):
-            if connected_points[i, 0] not in p2p.keys():
-                p2p[connected_points[i, 0]] = [connected_points[i, 1]]
-                cost_streets[(connected_points[i, 0], connected_points[i, 1])] = connections.geometry[i].length * 100
-                streets[(connected_points[i, 0], connected_points[i, 1])] = i
+    for i, connection in connections.iterrows():
+        if np.logical_and(connection['A'] != -1, connection['B'] != -1):
+            if connection['A']not in p2p.keys():
+                p2p[connection['A']] = [connection['B']]
             else:
-                p2p[connected_points[i, 0]].append(connected_points[i, 1])
-                cost_streets[(connected_points[i, 0], connected_points[i, 1])] = connections.geometry[i].length * 100
-                streets[(connected_points[i, 0], connected_points[i, 1])] = i
-
-            if connected_points[i, 1] not in p2p.keys():
-                p2p[connected_points[i, 1]] = [connected_points[i, 0]]
-                cost_streets[(connected_points[i, 1], connected_points[i, 0])] = connections.geometry[i].length * 100
-                streets[(connected_points[i, 1], connected_points[i, 0])] = i
+                p2p[connection['A']].append(connection['B'])
+            if connection['B'] not in p2p.keys():
+                p2p[connection['B']] = [connection['A']]
             else:
-                p2p[connected_points[i, 1]].append(connected_points[i, 0])
-                cost_streets[(connected_points[i, 1], connected_points[i, 0])] = connections.geometry[i].length * 100
-                streets[(connected_points[i, 1], connected_points[i, 0])] = i
+                p2p[connection['B']].append(connection['A'])
 
-    return p2p, streets, cost_streets
+    return p2p

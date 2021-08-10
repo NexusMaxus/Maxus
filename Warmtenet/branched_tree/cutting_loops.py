@@ -62,8 +62,13 @@ connections = get_all_connections(roads=roads, points=points_unique_geometry)
 
 connected_points = get_all_connected_points(connections=connections, points=points_unique_geometry)
 
+# assign costs to connections
+connections['A'] = connected_points[:, 0]
+connections['B'] = connected_points[:, 1]
+connections['costs'] = connections.geometry.length * 100
+
 # see what points can connect to other points
-p2p, streets, cost_streets = store_connected_points_per_point(connected_points, connections)
+p2p = store_connected_points_per_point(connected_points, connections)
 # cut_loops
 print(p2p)
 
@@ -80,7 +85,6 @@ def find_loops(p2p, index_bron, connections, plot=False):
 
     while len(active_keys) > 0:
 
-        print('loops_found:', len(loops))
         rounds = active_keys.copy()
         if plot:
             plot_path_loop(paths={k: v for k, v in paths.items() if k in active_keys}, connections=connections, points=points_unique_geometry)
@@ -99,8 +103,8 @@ def find_loops(p2p, index_bron, connections, plot=False):
                         loop = path_orig[path_orig.index(p_index):] + [p_index]
                         if (loop not in loops) and (loop.reverse() not in loops):
                             loops.append(loop)
-                            cut = find_cut(loop, cost_streets)
-                            cuts.append(cut)
+                            cut = find_cut(loop, connections)
+                            cuts.extend(cut)
 
                     for i, p_index in enumerate(p_conn[p_conn != path_orig[-2]]):
                         if ((path_orig[-1], p_index) not in cuts) and ((p_index, path_orig[-1]) not in cuts):
@@ -113,8 +117,8 @@ def find_loops(p2p, index_bron, connections, plot=False):
                                     loop = path_orig[path_orig.index(p_index):] + [p_index]
                                     if (loop not in loops) and (loop.reverse() not in loops):
                                         loops.append(loop)
-                                        cut = find_cut(loop, cost_streets)
-                                        cuts.append(cut)
+                                        cut = find_cut(loop, connections)
+                                        cuts.extend(cut)
 
                             if i > 0:   # start new path if not loop
                                 x += 1
@@ -125,21 +129,36 @@ def find_loops(p2p, index_bron, connections, plot=False):
                                     loop = path_orig[path_orig.index(p_index):] + [p_index]
                                     if (loop not in loops) and (loop.reverse() not in loops):
                                         loops.append(loop)
-                                        cut = find_cut(loop, cost_streets)
-                                        cuts.append(cut)
+                                        cut = find_cut(loop, connections)
+                                        cuts.extend(cut)
                         else:
                             if key in active_keys:
                                 active_keys.remove(key)
     return cuts, len(loops)
         # for key in active_keys:
 
-def find_cut(loop, cost_streets):
-    costs_segments_in_loop = []
+def find_cut(loop, connections):
+    connections_by_points = connections.set_index(['A', 'B'])
+    cuts = []
+    x = 0
+    paths = {x: []}
+    roads = {x: []}
     for i in range(len(loop) - 1):
-        costs_segments_in_loop.append(cost_streets[loop[i], loop[i+1]])
+        for key in paths:
+            segments = connections_by_points.loc[loop[i], loop[i+1]]
+            if len(segments) > 1:
+                for j, segment in segments.iterrows():
+                    x += 1
+                    paths[x] = paths[key] + segment['costs']
+                    roads[x] = roads[key] + segment['geometry']
+            else:
+                paths[key] = paths[key].append(segments['costs'])
+                roads[key] = roads[key].append(segments['geometry'])
 
-    index_exp = np.argmax(costs_segments_in_loop)
-    return loop[index_exp], loop[index_exp + 1]
+    for i, path in paths.items():
+        index_exp = np.argmax(path)
+        cuts.append(roads[i][index_exp])
+    return cuts
 
 def plot_path_loop(connections, paths, points):
     f, ax = plt.subplots()
@@ -152,26 +171,27 @@ def plot_path_loop(connections, paths, points):
 def plot_loop(new_connections):
     f, ax = plt.subplots()
     new_connections.plot(ax=ax)
+    for k, v in points.iterrows():
+        plt.annotate(s=k, xy=v.geometry.coords[:][0], fontsize = 10)
     # roads.loc[roads_to_plot].to_file('~/PycharmProjects/Maxus/Warmtenet/data/loops_district/output_cut_network.geojson', driver='GeoJSON')
     points_unique_geometry.plot(ax=ax, color='r')
     plt.show()
 
 
 cuts, number_of_loops = find_loops(p2p, index_bron, connections)
-street_index = [streets[(cut[0], cut[1])] for cut in cuts]
-streets_branched = list(set(connections.index) - set(street_index))
-new_connections = connections.loc[streets_branched].reset_index()
+mask_connection = [conn for conn in connections if conn.geometry not in cuts]
+new_connections = connections[mask_connection]
 plot_loop(new_connections)
 iteration = 0
 print(cuts)
 
 while number_of_loops > 0:
+    print(f'iteration {iteration}:, {number_of_loops} loops detected')
     iteration += 1
-    print(iteration)
     new_connected_points = get_all_connected_points(new_connections, points_unique_geometry)
     p2p, _, _ = store_connected_points_per_point(new_connected_points, new_connections)
 
-    cuts2 = find_loops(p2p, index_bron, new_connections, plot=False)
+    cuts2, number_of_loops = find_loops(p2p, index_bron, new_connections, plot=False)
     cuts = cuts + cuts2
     street_index = [streets[(cut[0], cut[1])] for cut in cuts]
     streets_branched = list(set(connections.index) - set(street_index))
