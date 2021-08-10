@@ -111,7 +111,6 @@ def find_loops(p2p, index_bron, connections, conns_both_directions, plot=False):
                             loops.append(loop)
                             cut, index_cut = find_cut(loop, conns_both_directions, index_cuts)
                             cuts.extend(cut)
-                            index_cuts.extend(index_cut)
                         if len(p_conn[p_conn != path_orig[-2]]) == 0:
                             active_keys.remove(key)
 
@@ -127,7 +126,6 @@ def find_loops(p2p, index_bron, connections, conns_both_directions, plot=False):
                                         loops.append(loop)
                                         cut, index_cut = find_cut(loop, conns_both_directions, index_cuts)
                                         cuts.extend(cut)
-                                        index_cuts.extend(index_cut)
 
                             else:   # start new path if not loop
                                 x += 1
@@ -140,7 +138,6 @@ def find_loops(p2p, index_bron, connections, conns_both_directions, plot=False):
                                         loops.append(loop)
                                         cut, index_cut = find_cut(loop, conns_both_directions, index_cuts)
                                         cuts.extend(cut)
-                                        index_cuts.extend(index_cut)
                         else:
                             if key in active_keys:
                                 active_keys.remove(key)
@@ -190,6 +187,7 @@ def find_cut(loop, conns_both_directions, index_cuts_done):
             if ind not in index_cuts_done:
                 new_cuts.append(cut)
                 index_cuts.append(ind)
+                index_cuts_done.append(ind)
 
     return new_cuts, index_cuts
 
