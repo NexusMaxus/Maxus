@@ -218,7 +218,7 @@ def get_all_connected_points(connections, points):
     return points_in_road_short
 
 
-def store_connected_points_per_point(connected_points, connections):
+def store_connected_points_per_point(connections):
     """
     makes a dictionary of all points that are connected to the point at issue for each point
 

@@ -73,7 +73,7 @@ connections_by_points_reverse = connections.set_index(['B', 'A'])
 conns_both_directions = connections_by_points.append(connections_by_points_reverse)
 
 # see what points can connect to other points
-p2p = store_connected_points_per_point(connected_points, connections)
+p2p = store_connected_points_per_point(connections)
 # cut_loops
 print(p2p)
 
@@ -227,9 +227,9 @@ while number_of_loops > 0:
     print(f'iteration {iteration}:, {number_of_loops} loops detected')
     iteration += 1
     new_connected_points = get_all_connected_points(new_connections, points_unique_geometry)
-    p2p, _, _ = store_connected_points_per_point(new_connected_points, new_connections)
+    p2p = store_connected_points_per_point(new_connections)
 
-    cuts2, number_of_loops = find_loops(p2p, index_bron, new_connections, plot=False)
+    cuts2, number_of_loops = find_loops(p2p, index_bron, new_connections, conns_both_directions, plot=False)
     cuts = cuts + cuts2
 
     mask_connections = []
@@ -243,7 +243,7 @@ while number_of_loops > 0:
     plot_loop(new_connections, points_unique_geometry)
 
 new_connected_points = get_all_connected_points(new_connections, points_unique_geometry)
-p2p, streets_branched, cost_streets_branched = store_connected_points_per_point(new_connected_points, new_connections)
+p2p = store_connected_points_per_point(new_connections)
 
 # plot income
 
@@ -290,13 +290,18 @@ x = len(paths)
 
 active_keys = list(paths.keys())
 
+new_connections_by_points = new_connections.set_index(['A', 'B'])
+new_connections_by_points_reverse = new_connections.set_index(['B', 'A'])
+new_conns_both_directions = new_connections_by_points.append(new_connections_by_points_reverse)
+
+
 while len(active_keys) > 0:
     rounds = active_keys.copy()
     # plot_paths(paths=paths, connections=new_connections, points=points_unique_geometry, losing_points=losing_points)
     for key in rounds:
         if len(paths[key]) > 1:
             income[key] += calculate_revenue(paths[key][-2], points_unique_geometry, points_with_house_and_source)
-            cost[key] += cost_streets_branched[paths[key][-1], paths[key][-2]]
+            cost[key] += new_conns_both_directions.loc[paths[key][-1], paths[key][-2]]['costs']
             profit[key] = income[key] - cost[key]
         else:
             profit[key] = 0
