@@ -219,7 +219,7 @@ for i, conn in connections.iterrows():
         mask_connections.append(True)
 
 new_connections = connections[mask_connections]
-plot_loop(new_connections, points_unique_geometry)
+# plot_loop(new_connections, points_unique_geometry)
 iteration = 0
 print(cuts)
 
@@ -240,17 +240,17 @@ while number_of_loops > 0:
             mask_connections.append(True)
 
     new_connections = connections[mask_connections]
-    plot_loop(new_connections, points_unique_geometry)
+    # plot_loop(new_connections, points_unique_geometry)
 
 new_connected_points = get_all_connected_points(new_connections, points_unique_geometry)
 p2p = store_connected_points_per_point(new_connections)
 
 # plot income
 
-f, ax = plt.subplots()
-new_connections.plot(ax=ax)
-points_unique_geometry.plot(ax=ax, column=points_unique_geometry['income'], cmap='YlOrRd', legend=True, vmin=0, vmax=10000)
-plt.show()
+# f, ax = plt.subplots()
+# new_connections.plot(ax=ax)
+# points_unique_geometry.plot(ax=ax, column=points_unique_geometry['income'], cmap='YlOrRd', legend=True, vmin=0, vmax=10000)
+# plt.show()
 
 # start calculating which houses to drop
 
