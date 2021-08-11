@@ -72,6 +72,10 @@ connections_by_points = connections.set_index(['A', 'B'])
 connections_by_points_reverse = connections.set_index(['B', 'A'])
 conns_both_directions = connections_by_points.append(connections_by_points_reverse)
 
+connections_dict = {}
+for k, g in conns_both_directions.groupby(level=(0, 1)):
+    connections_dict[k] = g.to_dict('r')
+
 # see what points can connect to other points
 p2p = store_connected_points_per_point(connections)
 # cut_loops
@@ -80,7 +84,7 @@ print(p2p)
 index_bron = points_unique_geometry[points_unique_geometry['pandidentificatie'] == 'BRON'].index.values[0]
 
 
-def find_loops(p2p, index_bron, connections, conns_both_directions, plot=False):
+def find_loops(p2p, index_bron, connections, connections_dict, plot=False):
     paths = {}
     x = 0
     paths[x] = [index_bron]
@@ -109,7 +113,7 @@ def find_loops(p2p, index_bron, connections, conns_both_directions, plot=False):
                         loop = path_orig[path_orig.index(p_index):] + [p_index]
                         if (loop not in loops) and (loop.reverse() not in loops):
                             loops.append(loop)
-                            cut, index_cut = find_cut(loop, conns_both_directions, index_cuts)
+                            cut, index_cut = find_cut(loop, connections_dict, index_cuts)
                             cuts.extend(cut)
                         if len(p_conn[p_conn != path_orig[-2]]) == 0:
                             active_keys.remove(key)
@@ -124,7 +128,7 @@ def find_loops(p2p, index_bron, connections, conns_both_directions, plot=False):
                                     loop = path_orig[path_orig.index(p_index):] + [p_index]
                                     if (loop not in loops) and (loop.reverse() not in loops):
                                         loops.append(loop)
-                                        cut, index_cut = find_cut(loop, conns_both_directions, index_cuts)
+                                        cut, index_cut = find_cut(loop, connections_dict, index_cuts)
                                         cuts.extend(cut)
 
                             else:   # start new path if not loop
@@ -136,7 +140,7 @@ def find_loops(p2p, index_bron, connections, conns_both_directions, plot=False):
                                     loop = path_orig[path_orig.index(p_index):] + [p_index]
                                     if (loop not in loops) and (loop.reverse() not in loops):
                                         loops.append(loop)
-                                        cut, index_cut = find_cut(loop, conns_both_directions, index_cuts)
+                                        cut, index_cut = find_cut(loop, connections_dict, index_cuts)
                                         cuts.extend(cut)
                         else:
                             if key in active_keys:
@@ -144,7 +148,7 @@ def find_loops(p2p, index_bron, connections, conns_both_directions, plot=False):
     return cuts, len(loops)
         # for key in active_keys:
 
-def find_cut(loop, conns_both_directions, index_cuts_done):
+def find_cut(loop, connections_dict, index_cuts_done):
 
     cuts = []
     x = 0
@@ -153,9 +157,9 @@ def find_cut(loop, conns_both_directions, index_cuts_done):
     for i in range(len(loop) - 1):
         original_keys = paths.copy().keys()
         for key in original_keys:
-            segments = conns_both_directions.loc[loop[i], loop[i+1]]
+            segments = connections_dict[(loop[i], loop[i+1])]
             if len(segments) > 1:
-                for j, segment in segments.reset_index().iterrows():
+                for j, segment in enumerate(segments):
                     if j == 0:
                         paths[key].append(segment['costs'])
                         roads[key].append(segment['geometry'])
@@ -165,8 +169,8 @@ def find_cut(loop, conns_both_directions, index_cuts_done):
                         roads[x] = roads[key][:-1] + [segment['geometry']]
 
             else:
-                paths[key].append(segments['costs'].values[0])
-                roads[key].append(segments['geometry'].values[0])
+                paths[key].append(segments[0]['costs'])
+                roads[key].append(segments[0]['geometry'])
 
     for i, path in paths.items():
         index_exp = np.argmax(path)
@@ -209,7 +213,7 @@ def plot_loop(new_connections, points):
     plt.show()
 
 
-cuts, number_of_loops = find_loops(p2p, index_bron, connections, conns_both_directions, plot=False)
+cuts, number_of_loops = find_loops(p2p, index_bron, connections, connections_dict, plot=False)
 
 mask_connections = []
 for i, conn in connections.iterrows():
@@ -266,129 +270,129 @@ def plot_paths(paths: dict, connections, points, losing_points):
     connections.plot(ax=ax[1], color='grey', alpha=0.5)
     points.loc[losing_points].plot(ax=ax[1], color='r')
     plt.show()
-
-end_point_branches = {key: value for key, value in p2p.items() if len(value) == 1}
-end_point_branches.pop(index_bron)
-junctions_branched = {key: value for key, value in p2p.items() if len(value) > 2}
-junctions_branched_status = {key: [False for v in value] for key, value in junctions_branched.items()}
-junctions_branched_income = {key: [0 for v in value] for key, value in junctions_branched.items()}
-junctions_branched_cost = {key: [0 for v in value] for key, value in junctions_branched.items()}
-junctions_branched_profit = {key: [0 for v in value] for key, value in junctions_branched.items()}
-junctions_branched_points = {key: [[] for v in value] for key, value in junctions_branched.items()}
-junctions_merging_status = {key: False for key, value in junctions_branched.items()}
-
-paths = {}
-income = {}
-cost = {}
-profit = {}
-finished_points = []
-losing_points = []
-
-for x, key in enumerate(end_point_branches.keys()):
-    paths[x] = [key]
-x = len(paths)
-
-active_keys = list(paths.keys())
-
-new_connections_by_points = new_connections.set_index(['A', 'B'])
-new_connections_by_points_reverse = new_connections.set_index(['B', 'A'])
-new_conns_both_directions = new_connections_by_points.append(new_connections_by_points_reverse)
-
-
-while len(active_keys) > 0:
-    rounds = active_keys.copy()
-    # plot_paths(paths=paths, connections=new_connections, points=points_unique_geometry, losing_points=losing_points)
-    for key in rounds:
-        if len(paths[key]) > 1:
-            income[key] += calculate_revenue(paths[key][-2], points_unique_geometry, points_with_house_and_source)
-            cost[key] += new_conns_both_directions.loc[paths[key][-1], paths[key][-2]]['costs']
-            profit[key] = income[key] - cost[key]
-        else:
-            profit[key] = 0
-            cost[key] = 0
-            income[key] = 0
-
-        if profit[key] < 0:
-            print('popping key because of profit:', key)
-            active_keys.remove(key)
-            finished_points.extend(paths[key][:-1])
-            losing_points.extend(paths[key][:-1])
-            if len(p2p[paths[key][-1]]) > 2:
-                p_index = p2p[paths[key][-1]].index(paths[key][-2])
-                junctions_branched_status[paths[key][-1]][p_index] = True
-
-            x += 1
-            paths[x] = [paths[key][-1]]
-            active_keys.append(x)
-
-        else:
-            if len(p2p[paths[key][-1]]) == 1:
-                if not p2p[paths[key][-1]] in paths[key]:
-                    next_point = p2p[paths[key][-1]]
-                    paths[key].extend(next_point)
-                else:
-                    print('BRON found')
-                    finished_points.extend(paths[key])
-                    active_keys.remove(key)
-                    print('profit:', profit[key])
-
-            elif len(p2p[paths[key][-1]]) == 2:
-                next_point = None
-                for point in p2p[paths[key][-1]]:
-                    if point not in finished_points:
-                        if len(paths[key]) == 1:
-                            next_point = point
-                        elif point != paths[key][-2]:
-                            next_point = point
-
-                if next_point is not None:
-                    paths[key].append(next_point)
-                else:
-                    raise ValueError(f'couldnt find next point for {paths[key][-1]}')
-
-            elif len(p2p[paths[key][-1]]) > 2:
-
-                if (sum([p in paths[key] for p in p2p[paths[key][-1]]]) + sum([p in finished_points for p in p2p[paths[key][-1]]])) > 1\
-                        and junctions_merging_status[paths[key][-1]]:
-                    directions = p2p[paths[key][-1]]
-                    index = junctions_branched_status[paths[key][-1]].index(False)
-                    next_point = directions[index]
-                    paths[key].append(next_point)
-                else:
-                    print('popping key because of junction:', key)
-                    active_keys.remove(key)
-                    if len(paths[key]) > 1:
-                        finished_points.extend(paths[key][:-1])
-                        p_index = p2p[paths[key][-1]].index(paths[key][-2])
-                        junctions_branched_status[paths[key][-1]][p_index] = True
-                        junctions_branched_income[paths[key][-1]][p_index] = income[key]
-                        junctions_branched_cost[paths[key][-1]][p_index] = cost[key]
-                        junctions_branched_profit[paths[key][-1]][p_index] = profit[key]
-                        junctions_branched_points[paths[key][-1]][p_index] = paths[key][:-1]
-
-                    if len(junctions_branched_status[paths[key][-1]]) - sum(junctions_branched_status[paths[key][-1]]) == 1:
-                        junctions_merging_status[paths[key][-1]] = True
-                        x += 1
-                        paths[x] = [item for sublist in junctions_branched_points[paths[key][-1]] for item in sublist] + [paths[key][-1]]
-                        income[x] = sum(junctions_branched_income[paths[key][-1]])
-                        cost[x] = sum(junctions_branched_cost[paths[key][-1]])
-                        profit[x] = sum(junctions_branched_profit[paths[key][-1]])
-                        active_keys.append(x)
-                        keys_to_remove = [k for k, path in paths.items() if path[-1] == paths[key][-1] and k != x and k in active_keys]
-                        print(keys_to_remove)
-                        for k in keys_to_remove:
-                            print('popping key because of junction, only one path can continue:', k, paths[k])
-                            active_keys.remove(k)
-
-f, ax = plt.subplots(1, 2)
-points_unique_geometry.plot(ax=ax[0])
-points_unique_geometry.plot(ax=ax[1])
-points_unique_geometry.loc[losing_points].plot(ax=ax[0], color='r')
-points_unique_geometry.loc[finished_points].plot(ax=ax[1], color='g')
-new_connections.plot(ax=ax[0])
-new_connections.plot(ax=ax[1])
-plt.show()
-
-print(wvs)
-print(prices)
+#
+# end_point_branches = {key: value for key, value in p2p.items() if len(value) == 1}
+# end_point_branches.pop(index_bron)
+# junctions_branched = {key: value for key, value in p2p.items() if len(value) > 2}
+# junctions_branched_status = {key: [False for v in value] for key, value in junctions_branched.items()}
+# junctions_branched_income = {key: [0 for v in value] for key, value in junctions_branched.items()}
+# junctions_branched_cost = {key: [0 for v in value] for key, value in junctions_branched.items()}
+# junctions_branched_profit = {key: [0 for v in value] for key, value in junctions_branched.items()}
+# junctions_branched_points = {key: [[] for v in value] for key, value in junctions_branched.items()}
+# junctions_merging_status = {key: False for key, value in junctions_branched.items()}
+#
+# paths = {}
+# income = {}
+# cost = {}
+# profit = {}
+# finished_points = []
+# losing_points = []
+#
+# for x, key in enumerate(end_point_branches.keys()):
+#     paths[x] = [key]
+# x = len(paths)
+#
+# active_keys = list(paths.keys())
+#
+# new_connections_by_points = new_connections.set_index(['A', 'B'])
+# new_connections_by_points_reverse = new_connections.set_index(['B', 'A'])
+# new_conns_both_directions = new_connections_by_points.append(new_connections_by_points_reverse)
+#
+#
+# while len(active_keys) > 0:
+#     rounds = active_keys.copy()
+#     plot_paths(paths=paths, connections=new_connections, points=points_unique_geometry, losing_points=losing_points)
+#     for key in rounds:
+#         if len(paths[key]) > 1:
+#             income[key] += calculate_revenue(paths[key][-2], points_unique_geometry, points_with_house_and_source)
+#             cost[key] += new_conns_both_directions.loc[paths[key][-1], paths[key][-2]]['costs']
+#             profit[key] = income[key] - cost[key]
+#         else:
+#             profit[key] = 0
+#             cost[key] = 0
+#             income[key] = 0
+#
+#         if profit[key] < 0:
+#             print('popping key because of profit:', key)
+#             active_keys.remove(key)
+#             finished_points.extend(paths[key][:-1])
+#             losing_points.extend(paths[key][:-1])
+#             if len(p2p[paths[key][-1]]) > 2:
+#                 p_index = p2p[paths[key][-1]].index(paths[key][-2])
+#                 junctions_branched_status[paths[key][-1]][p_index] = True
+#
+#             x += 1
+#             paths[x] = [paths[key][-1]]
+#             active_keys.append(x)
+#
+#         else:
+#             if len(p2p[paths[key][-1]]) == 1:
+#                 if not p2p[paths[key][-1]] in paths[key]:
+#                     next_point = p2p[paths[key][-1]]
+#                     paths[key].extend(next_point)
+#                 else:
+#                     print('BRON found')
+#                     finished_points.extend(paths[key])
+#                     active_keys.remove(key)
+#                     print('profit:', profit[key])
+#
+#             elif len(p2p[paths[key][-1]]) == 2:
+#                 next_point = None
+#                 for point in p2p[paths[key][-1]]:
+#                     if point not in finished_points:
+#                         if len(paths[key]) == 1:
+#                             next_point = point
+#                         elif point != paths[key][-2]:
+#                             next_point = point
+#
+#                 if next_point is not None:
+#                     paths[key].append(next_point)
+#                 else:
+#                     raise ValueError(f'couldnt find next point for {paths[key][-1]}')
+#
+#             elif len(p2p[paths[key][-1]]) > 2:
+#
+#                 if (sum([p in paths[key] for p in p2p[paths[key][-1]]]) + sum([p in finished_points for p in p2p[paths[key][-1]]])) > 1\
+#                         and junctions_merging_status[paths[key][-1]]:
+#                     directions = p2p[paths[key][-1]]
+#                     index = junctions_branched_status[paths[key][-1]].index(False)
+#                     next_point = directions[index]
+#                     paths[key].append(next_point)
+#                 else:
+#                     print('popping key because of junction:', key)
+#                     active_keys.remove(key)
+#                     if len(paths[key]) > 1:
+#                         finished_points.extend(paths[key][:-1])
+#                         p_index = p2p[paths[key][-1]].index(paths[key][-2])
+#                         junctions_branched_status[paths[key][-1]][p_index] = True
+#                         junctions_branched_income[paths[key][-1]][p_index] = income[key]
+#                         junctions_branched_cost[paths[key][-1]][p_index] = cost[key]
+#                         junctions_branched_profit[paths[key][-1]][p_index] = profit[key]
+#                         junctions_branched_points[paths[key][-1]][p_index] = paths[key][:-1]
+#
+#                     if len(junctions_branched_status[paths[key][-1]]) - sum(junctions_branched_status[paths[key][-1]]) == 1:
+#                         junctions_merging_status[paths[key][-1]] = True
+#                         x += 1
+#                         paths[x] = [item for sublist in junctions_branched_points[paths[key][-1]] for item in sublist] + [paths[key][-1]]
+#                         income[x] = sum(junctions_branched_income[paths[key][-1]])
+#                         cost[x] = sum(junctions_branched_cost[paths[key][-1]])
+#                         profit[x] = sum(junctions_branched_profit[paths[key][-1]])
+#                         active_keys.append(x)
+#                         keys_to_remove = [k for k, path in paths.items() if path[-1] == paths[key][-1] and k != x and k in active_keys]
+#                         print(keys_to_remove)
+#                         for k in keys_to_remove:
+#                             print('popping key because of junction, only one path can continue:', k, paths[k])
+#                             active_keys.remove(k)
+#
+# f, ax = plt.subplots(1, 2)
+# points_unique_geometry.plot(ax=ax[0])
+# points_unique_geometry.plot(ax=ax[1])
+# points_unique_geometry.loc[losing_points].plot(ax=ax[0], color='r')
+# points_unique_geometry.loc[finished_points].plot(ax=ax[1], color='g')
+# new_connections.plot(ax=ax[0])
+# new_connections.plot(ax=ax[1])
+# plt.show()
+#
+# print(wvs)
+# print(prices)
 
