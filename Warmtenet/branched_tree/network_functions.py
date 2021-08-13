@@ -206,16 +206,16 @@ def get_all_connected_points(connections, points):
     -------
 
     """
-    points_in_road_short = np.ones((len(connections.geometry), 2), dtype=np.int16) * -1
+    points_in_connections = np.ones((len(connections.geometry), 2), dtype=np.int16) * -1
 
-    for i, road in enumerate(connections.geometry):
+    for i, connection in enumerate(connections.geometry):
         x = 0
         for j, point in points.geometry.items():
-            if road.distance(point) < 1e-1:
-                points_in_road_short[i, x] = j
+            if connection.distance(point) < 1e-1:
+                points_in_connections[i, x] = j
                 x += 1
 
-    return points_in_road_short
+    return points_in_connections
 
 
 def store_connected_points_per_point(connections):

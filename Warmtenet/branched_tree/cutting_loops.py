@@ -66,11 +66,12 @@ connected_points = get_all_connected_points(connections=connections, points=poin
 connections['A'] = connected_points[:, 0]
 connections['B'] = connected_points[:, 1]
 connections['costs'] = connections.geometry.length * 100
+connections = connections.loc[connections.groupby(['A', 'B']).costs.idxmin()]
 
 # both directions
-connections_by_points = connections.set_index(['A', 'B'])
-connections_by_points_reverse = connections.set_index(['B', 'A'])
-conns_both_directions = connections_by_points.append(connections_by_points_reverse)
+connections_indexed = connections.set_index(['A', 'B'])
+connections_indexed_reverse = connections.set_index(['B', 'A'])
+conns_both_directions = connections_indexed.append(connections_indexed_reverse)
 
 connections_dict = {}
 for k, g in conns_both_directions.groupby(level=(0, 1)):
