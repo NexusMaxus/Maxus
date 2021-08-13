@@ -72,10 +72,8 @@ connections = connections.loc[connections.groupby(['A', 'B']).costs.idxmin()]
 connections_indexed = connections.set_index(['A', 'B'])
 connections_indexed_reverse = connections.set_index(['B', 'A'])
 conns_both_directions = connections_indexed.append(connections_indexed_reverse)
+connections_dict = conns_both_directions.to_dict()
 
-connections_dict = {}
-for k, g in conns_both_directions.groupby(level=(0, 1)):
-    connections_dict[k] = g.to_dict('r')
 
 # see what points can connect to other points
 p2p = store_connected_points_per_point(connections)
@@ -85,112 +83,72 @@ print(p2p)
 index_bron = points_unique_geometry[points_unique_geometry['pandidentificatie'] == 'BRON'].index.values[0]
 
 
-def find_loops(p2p, index_bron, connections, connections_dict, plot=False):
+def make_tree(p2p, index_bron, connections, connections_dict, plot=False):
     paths = {}
     x = 0
     paths[x] = [index_bron]
-    active_keys = [x]
     cuts = []
-    index_cuts = []
     loops = []
 
-    while len(active_keys) > 0:
-        rounds = active_keys.copy()
-        print(f'cuts: {len(cuts)}, active_keys: {len(active_keys)}, loops: {len(loops)}')
+    while len(paths) > 0:
+        keys_previous_round = list(paths.keys()).copy()
+        print(f'cuts: {len(cuts)}, paths: {len(keys_previous_round)}, loops: {len(loops)}')
         if plot:
             plot_path_loop(paths={k: v for k, v in paths.items() if k in active_keys}, connections=connections, points=points_unique_geometry)
-        for key in rounds:
+        for key in keys_previous_round:
             path_orig = paths[key].copy()
             p_conn = np.array(p2p[path_orig[-1]])
-            if len(p_conn) == 1 and path_orig[-1] != index_bron:
-                active_keys.remove(key)
-            else:
-                if len(p_conn) == 1:
+
+            # is it a dead end?
+            if len(p_conn) == 1:
+                # is it the source?
+                if path_orig[-1] == index_bron:
                     paths[key].append(p_conn[0])
                 else:
-                    # remove if loop detected
-                    if len(p_conn[p_conn == path_orig[-2]]) == 2:
-                        p_index = path_orig[-2]
-                        loop = path_orig[path_orig.index(p_index):] + [p_index]
-                        if (loop not in loops) and (loop.reverse() not in loops):
-                            loops.append(loop)
-                            cut, index_cut = find_cut(loop, connections_dict, index_cuts)
-                            cuts.extend(cut)
-                        if len(p_conn[p_conn != path_orig[-2]]) == 0:
-                            active_keys.remove(key)
-
-                    for i, p_index in enumerate(p_conn[p_conn != path_orig[-2]]):
-                        if len(list(filter(lambda x: (x[0] == path_orig[-1] and x[1] == p_index) or (x[1] == path_orig[-1] and x[0] == p_index), index_cuts))) == 0:
-                            if i == 0:  # continue existing path
-                                if p_index not in paths[key]:
-                                    paths[key].append(p_index)
-                                else:
-                                    active_keys.remove(key)
-                                    loop = path_orig[path_orig.index(p_index):] + [p_index]
-                                    if (loop not in loops) and (loop.reverse() not in loops):
-                                        loops.append(loop)
-                                        cut, index_cut = find_cut(loop, connections_dict, index_cuts)
-                                        cuts.extend(cut)
-
-                            else:   # start new path if not loop
-                                x += 1
-                                paths[x] = path_orig + [p_index]
-                                if p_index not in path_orig:
-                                    active_keys.append(x)
-                                else:
-                                    loop = path_orig[path_orig.index(p_index):] + [p_index]
-                                    if (loop not in loops) and (loop.reverse() not in loops):
-                                        loops.append(loop)
-                                        cut, index_cuts = find_cut(loop, connections_dict, index_cuts)
-                                        cuts.extend(cut)
+                    del paths[key]
+            else:
+                for i, p_to in enumerate(p_conn[p_conn != path_orig[-2]]):
+                    if (p_to, path_orig[-1]) not in cuts:
+                        if i == 0 and (p_to not in path_orig):
+                            # extend path
+                            paths[key].append(p_to)
+                        elif i > 0 and (p_to not in path_orig):
+                            # make new path and extend
+                            x += 1
+                            paths[x] = path_orig + [p_to]
                         else:
-                            if key in active_keys:
-                                active_keys.remove(key)
+                            define_loop_and_cut(path_orig, p_to, loops, cuts, connections_dict)
+                            if i == 0:
+                                del paths[key]
+                    else:
+                        if i == 0:
+                            del paths[key]
+                # all connection to go by are already cut
+
     return cuts, len(loops)
         # for key in active_keys:
 
-def find_cut(loop, connections_dict, index_cuts_done):
 
-    cuts = []
-    x = 0
-    paths = {x: []}
-    roads = {x: []}
-    index_segment = {x: []}
-    index_cuts = []
+def find_cut(loop, connections_dict):
 
+    costs_segments_in_loop = []
     for i in range(len(loop) - 1):
-        original_keys = paths.copy().keys()
-        for key in original_keys:
-            segments = connections_dict[(loop[i], loop[i+1])]
-            if len(segments) > 1:
-                for j, segment in enumerate(segments):
-                    if j == 0:
-                        paths[key].append(segment['costs'])
-                        roads[key].append(segment['geometry'])
-                        index_segment[key].append(j)
-                    else:
-                        x += 1
-                        paths[x] = paths[key][:-1] + [segment['costs']]
-                        roads[x] = roads[key][:-1] + [segment['geometry']]
-                        index_segment[x] = index_segment[key][:-1] + [j]
-            else:
-                paths[key].append(segments[0]['costs'])
-                roads[key].append(segments[0]['geometry'])
-                index_segment[key].append(0)
+        costs_segments_in_loop.append(connections_dict['costs'][loop[i], loop[i + 1]])
 
-    for i, path in paths.items():
-        index_exp = np.argmax(path)
-        cuts.append(roads[i][index_exp])
-        index_cuts.append((loop[index_exp], loop[index_exp + 1], index_segment[i][index_exp]))
+    index_exp = np.argmax(costs_segments_in_loop)
+    return (loop[index_exp], loop[index_exp + 1]), (loop[index_exp + 1], loop[index_exp])
 
 
-    new_cuts = []
-    for ind, cut in zip(index_cuts, cuts):
-        if ind not in index_cuts_done:
-            new_cuts.append(cut)
-            index_cuts_done.append(ind)
+def define_loop_and_cut(path_orig, p_index, loops, cuts, connections_dict):
+    loop = path_orig[path_orig.index(p_index):] + [p_index]
+    if (loop not in loops) and (loop.reverse() not in loops):
+        loops.append(loop)
+        cut_pair = find_cut(loop, connections_dict)
+        for cut in cut_pair:
+            if cut not in cuts:
+                cuts.append(cut)
 
-    return new_cuts, index_cuts_done
+
 
 def plot_path_loop(connections, paths, points):
     f, ax = plt.subplots()
@@ -203,45 +161,25 @@ def plot_path_loop(connections, paths, points):
 def plot_loop(new_connections, points):
     f, ax = plt.subplots()
     new_connections.plot(ax=ax)
-    # for k, v in points.iterrows():
-    #     plt.annotate(s=k, xy=v.geometry.coords[:][0], fontsize = 10)
+    for k, v in points.iterrows():
+        plt.annotate(s=k, xy=v.geometry.coords[:][0], fontsize = 10)
     # roads.loc[roads_to_plot].to_file('~/PycharmProjects/Maxus/Warmtenet/data/loops_district/output_cut_network.geojson', driver='GeoJSON')
     points.plot(ax=ax, color='r')
     plt.show()
 
 
-cuts, number_of_loops = find_loops(p2p, index_bron, connections, connections_dict, plot=False)
+cuts, number_of_loops = make_tree(p2p, index_bron, connections, connections_dict, plot=False)
 
-mask_connections = []
-for i, conn in connections.iterrows():
-    if conn.geometry in cuts:
-        mask_connections.append(False)
+mask = []
+for index in connections_indexed.index.values:
+    if index in cuts:
+        mask.append(False)
     else:
-        mask_connections.append(True)
+        mask.append(True)
 
-new_connections = connections[mask_connections]
+new_connections = connections_indexed[mask]
 plot_loop(new_connections, points_unique_geometry)
-iteration = 0
 print(cuts)
-
-while number_of_loops > 0:
-    print(f'iteration {iteration}:, {number_of_loops} loops detected')
-    iteration += 1
-    new_connected_points = get_all_connected_points(new_connections, points_unique_geometry)
-    p2p = store_connected_points_per_point(new_connections)
-
-    cuts2, number_of_loops = find_loops(p2p, index_bron, new_connections, connections_dict, plot=False)
-    cuts = cuts + cuts2
-
-    mask_connections = []
-    for i, conn in connections.iterrows():
-        if conn.geometry in cuts:
-            mask_connections.append(False)
-        else:
-            mask_connections.append(True)
-
-    new_connections = connections[mask_connections]
-    plot_loop(new_connections, points_unique_geometry)
 
 new_connected_points = get_all_connected_points(new_connections, points_unique_geometry)
 p2p = store_connected_points_per_point(new_connections)
