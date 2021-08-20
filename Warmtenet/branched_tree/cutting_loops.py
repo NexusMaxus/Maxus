@@ -25,10 +25,10 @@ points_with_house.loc[:, 'pandidentificatie'] = [str(p[1:]) for p in points_with
 # generate price for each house
 price_threshold = []
 warmtevraag = []
-prices = np.fromfile('/home/rogier/PycharmProjects/Maxus/Warmtenet/branched_tree/prices.dat', dtype=int)
-wvs = np.fromfile('/home/rogier/PycharmProjects/Maxus/Warmtenet/branched_tree/wv.dat', dtype=int)
-# prices = np.random.randint(50, 60, len(points_with_house_and_source))
-# wvs = np.random.randint(50, 60, len(points_with_house_and_source))
+# prices = np.fromfile('/home/rogier/PycharmProjects/Maxus/Warmtenet/branched_tree/prices.dat', dtype=int)
+# wvs = np.fromfile('/home/rogier/PycharmProjects/Maxus/Warmtenet/branched_tree/wv.dat', dtype=int)
+prices = np.random.randint(50, 60, len(points_with_house_and_source))
+wvs = np.random.randint(10, 120, len(points_with_house_and_source))
 for index, price, wv in zip(points_with_house_and_source.index, prices, wvs):
     if points_with_house_and_source.loc[index, 'pandidentificatie'] != 'BRON':
         price_threshold.append(price)
@@ -40,7 +40,7 @@ for index, price, wv in zip(points_with_house_and_source.index, prices, wvs):
 # select houses above price threshold
 points_with_house_and_source['threshold'] = price_threshold
 points_with_house_and_source['warmtevraag'] = warmtevraag
-points_with_house_and_source = points_with_house_and_source[points_with_house_and_source.threshold >= 57]
+points_with_house_and_source = points_with_house_and_source[points_with_house_and_source.threshold >= 55]
 
 # load junctions and put all selected points in dataframe
 points = pd.concat([points_with_house_and_source, junctions], ignore_index=True, sort=True)
@@ -181,8 +181,7 @@ new_connections = connections_indexed[mask]
 plot_loop(new_connections, points_unique_geometry)
 print(cuts)
 
-new_connected_points = get_all_connected_points(new_connections, points_unique_geometry)
-p2p = store_connected_points_per_point(new_connections)
+p2p = store_connected_points_per_point(new_connections.reset_index())
 
 # plot income
 
@@ -229,15 +228,14 @@ x = len(paths)
 
 active_keys = list(paths.keys())
 
-new_connections_by_points = new_connections.set_index(['A', 'B'])
-new_connections_by_points_reverse = new_connections.set_index(['B', 'A'])
-new_conns_both_directions = new_connections_by_points.append(new_connections_by_points_reverse)
+new_connections_reversed = new_connections.reset_index().set_index(['B', 'A'])
+new_conns_both_directions = new_connections.append(new_connections_reversed)
 new_conns_dict = new_conns_both_directions.to_dict()
 
 while len(active_keys) > 0:
-    rounds = active_keys.copy()
-    plot_paths(paths=paths, connections=new_connections, points=points_unique_geometry, losing_points=losing_points)
-    for key in rounds:
+    previous_keys = active_keys.copy()
+    # plot_paths(paths=paths, connections=new_connections, points=points_unique_geometry, losing_points=losing_points)
+    for key in previous_keys:
         if len(paths[key]) > 1:
             income[key] += calculate_revenue(paths[key][-2], points_unique_geometry, points_with_house_and_source)
             cost[key] += new_conns_dict['costs'][(paths[key][-1], paths[key][-2])]
@@ -262,9 +260,9 @@ while len(active_keys) > 0:
 
         else:
             if len(p2p[paths[key][-1]]) == 1:
-                if not p2p[paths[key][-1]] in paths[key]:
-                    next_point = p2p[paths[key][-1]]
-                    paths[key].extend(next_point)
+                if paths[key][-1] != index_bron:
+                    next_point = p2p[paths[key][-1]][0]
+                    paths[key].append(next_point)
                 else:
                     print('BRON found')
                     finished_points.extend(paths[key])
@@ -321,11 +319,10 @@ while len(active_keys) > 0:
 
 f, ax = plt.subplots(1, 2)
 points_unique_geometry.plot(ax=ax[0])
-points_unique_geometry.plot(ax=ax[1])
 points_unique_geometry.loc[losing_points].plot(ax=ax[0], color='r')
-points_unique_geometry.loc[finished_points].plot(ax=ax[1], color='g')
 new_connections.plot(ax=ax[0])
 new_connections.plot(ax=ax[1])
+points_unique_geometry.plot(ax=ax[1], column=points_unique_geometry['income'], cmap='YlOrRd', legend=True, vmin=0, vmax=10000)
 plt.show()
 
 print(wvs)
