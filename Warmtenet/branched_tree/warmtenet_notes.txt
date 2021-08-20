@@ -1,6 +1,8 @@
 
 TO DO:
 
+ --> made SSH key: DONE!
+
 (!)	--> global optimum by cutting loops? 
 
  	--> iterate over price
