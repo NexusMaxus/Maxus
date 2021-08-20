@@ -1,0 +1,23 @@
+
+TO DO:
+
+ --> made SSH key: DONE!
+
+(!)	--> global optimum by cutting loops? 
+
+ 	--> iterate over price
+
+(!) 	--> cutting at junctions (these points are the ones with negative mean-profit, averaged over p2p)
+
+	--> realistic input data (warmtevraag, prijs, threshold)
+
+ 	--> calculate profit with fixed price, not personal threshold!
+
+ 	--> ecological profit: count as costs the sum of all differences between fixed price and alternative energy price (or what they WANT to pay) 
+			for all households who would want to join (i.e. are points in the graph) but the energy supplier has chosen not to do so because of profit
+
+ 	--> people may be willing to pay more for the most sustainable alternative, i.e. warmtenet (https://www.tudelft.nl/en/delft-outlook/articles/how-sustainable-is-electric-heating)
+
+ 	--> more generally, we can define a price in terms of CO2-emissions, i.e. low 'price' means high CO2-reduction
+
+ 	--> On a neigbourhood-level, we want to be able to compare pure profit with ecological impact (especially iterating over prices)
