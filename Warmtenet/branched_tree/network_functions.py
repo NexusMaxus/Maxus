@@ -85,17 +85,17 @@ def _merge_buildings_to_create_unique_points(points: gpd.GeoDataFrame, same_poin
             if eigen_pand is not None:
                 andere_panden.append(eigen_pand)
             if not andere_panden:
-                panden[index] = str([])
+                panden[index] = []
             else:
-                panden[index] = str(andere_panden)
+                panden[index] = andere_panden
             to_remove.extend(same_points[index])
             for key in same_points[index]:
                 same_points.pop(key)
         else:
             if eigen_pand is not None:
-                panden[index] = str([eigen_pand])
+                panden[index] = [eigen_pand]
             else:
-                panden[index] = str([])
+                panden[index] = []
 
     alle_panden = pd.Series(panden, name='panden')
     points_unique_geometry = pd.concat([points, alle_panden], axis=1)
@@ -206,19 +206,19 @@ def get_all_connected_points(connections, points):
     -------
 
     """
-    points_in_road_short = np.ones((len(connections.geometry), 2), dtype=np.int16) * -1
+    points_in_connections = np.ones((len(connections.geometry), 2), dtype=np.int16) * -1
 
-    for i, road in connections.geometry.items():
+    for i, connection in enumerate(connections.geometry):
         x = 0
         for j, point in points.geometry.items():
-            if road.distance(point) < 1e-1:
-                points_in_road_short[i, x] = j
+            if connection.distance(point) < 1e-1:
+                points_in_connections[i, x] = j
                 x += 1
 
-    return points_in_road_short
+    return points_in_connections
 
 
-def store_connected_points_per_point(connected_points, connections):
+def store_connected_points_per_point(connections):
     """
     makes a dictionary of all points that are connected to the point at issue for each point
 
@@ -232,27 +232,16 @@ def store_connected_points_per_point(connected_points, connections):
 
     """
     p2p = {}
-    cost_streets = {}
-    streets = {}
 
-    for i in range(len(connected_points)):
-        if np.logical_and(connected_points[i, 0] != -1, connected_points[i, 1] != -1):
-            if connected_points[i, 0] not in p2p.keys():
-                p2p[connected_points[i, 0]] = [connected_points[i, 1]]
-                cost_streets[(connected_points[i, 0], connected_points[i, 1])] = connections.geometry[i].length * 100
-                streets[(connected_points[i, 0], connected_points[i, 1])] = i
+    for i, connection in connections.iterrows():
+        if np.logical_and(connection['A'] != -1, connection['B'] != -1):
+            if connection['A']not in p2p.keys():
+                p2p[connection['A']] = [connection['B']]
             else:
-                p2p[connected_points[i, 0]].append(connected_points[i, 1])
-                cost_streets[(connected_points[i, 0], connected_points[i, 1])] = connections.geometry[i].length * 100
-                streets[(connected_points[i, 0], connected_points[i, 1])] = i
-
-            if connected_points[i, 1] not in p2p.keys():
-                p2p[connected_points[i, 1]] = [connected_points[i, 0]]
-                cost_streets[(connected_points[i, 1], connected_points[i, 0])] = connections.geometry[i].length * 100
-                streets[(connected_points[i, 1], connected_points[i, 0])] = i
+                p2p[connection['A']].append(connection['B'])
+            if connection['B'] not in p2p.keys():
+                p2p[connection['B']] = [connection['A']]
             else:
-                p2p[connected_points[i, 1]].append(connected_points[i, 0])
-                cost_streets[(connected_points[i, 1], connected_points[i, 0])] = connections.geometry[i].length * 100
-                streets[(connected_points[i, 1], connected_points[i, 0])] = i
+                p2p[connection['B']].append(connection['A'])
 
-    return p2p, streets, cost_streets
+    return p2p
