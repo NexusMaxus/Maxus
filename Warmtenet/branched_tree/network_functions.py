@@ -2,8 +2,9 @@ import geopandas as gpd
 from typing import Dict, List
 import numpy as np
 import pandas as pd
-from shapely.geometry import MultiPoint, LineString
+from shapely.geometry import MultiPoint, LineString, Point
 from utils import split_line_with_points
+
 
 
 def create_unique_points_and_merge_panden(points: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
@@ -62,6 +63,16 @@ def _find_overlapping_points_in_network(points: gpd.GeoDataFrame) -> Dict[int, L
 
     return same_points
 
+
+def merge_buildings(points, price):
+    gb = points.groupby(by=[
+    [round(x.coords.xy[0][0], 0) for x in points.geometry],
+    [round(x.coords.xy[1][0], 0) for x in points.geometry]])
+    income = gb.sum().warmtevraag * price
+    income.name = 'income'
+    geom = gb.first().geometry
+
+    return gpd.GeoDataFrame(pd.concat((income, st_gid, geom), axis=1), geometry='geometry')
 
 def _merge_buildings_to_create_unique_points(points: gpd.GeoDataFrame, same_points: Dict[int, List[int]]) -> gpd.GeoDataFrame:
     """
@@ -182,6 +193,10 @@ def get_all_connections(roads: gpd.GeoDataFrame, points: gpd.GeoDataFrame) -> gp
     -------
 
     """
+    # todo: junctions should have st_gid's
+    # grouped_by_street = points.groupby('st_gid')
+    # long_roads_ids = list(grouped_by_street.filter(lambda x: len(x) > 2).st_gid.unique())
+    # long_roads = roads.loc[long_roads_ids]
     long_roads = find_long_roads(roads=roads, points=points)
     smaller_parts = split_long_roads(long_roads, roads=roads, points=points)
 

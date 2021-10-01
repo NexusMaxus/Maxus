@@ -3,9 +3,12 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import random
-from branched_tree.network_functions import create_unique_points_and_merge_panden, \
+from branched_tree.network_functions import merge_buildings, create_unique_points_and_merge_panden, \
     get_all_connections, get_all_connected_points, store_connected_points_per_point
 from branched_tree.profit_functions import calculate_revenue
+import seaborn as shs
+shs.set_theme('paper')
+price = 55
 
 points_with_house_and_source = gpd.read_file('/home/rogier/PycharmProjects/Maxus/Warmtenet/data/loops_district/Aansluitpunten.geojson')
 all_points = gpd.read_file('/home/rogier/PycharmProjects/Maxus/Warmtenet/data/loops_district/Kruispunten.geojson')
@@ -40,7 +43,7 @@ for index, price, wv in zip(points_with_house_and_source.index, prices, wvs):
 # select houses above price threshold
 points_with_house_and_source['threshold'] = price_threshold
 points_with_house_and_source['warmtevraag'] = warmtevraag
-points_with_house_and_source = points_with_house_and_source[points_with_house_and_source.threshold >= 55]
+points_with_house_and_source = points_with_house_and_source[points_with_house_and_source.threshold >= price]
 
 # load junctions and put all selected points in dataframe
 points = pd.concat([points_with_house_and_source, junctions], ignore_index=True, sort=True)
@@ -49,13 +52,7 @@ points = pd.concat([points_with_house_and_source, junctions], ignore_index=True,
 roads = gpd.read_file('/home/rogier/PycharmProjects/Maxus/Warmtenet/data/loops_district/Wegen.geojson')
 
 # see what point are so near to one another that they should be treated as one
-points_unique_geometry = create_unique_points_and_merge_panden(points)
-
-# income
-income = [calculate_revenue(index, points_unique_geometry, points_with_house_and_source)
-          for index, row in points_unique_geometry.iterrows()]
-points_unique_geometry['income'] = income
-
+points_unique_geometry = merge_buildings(points, price).reset_index()
 
 # points_unique_geometry = gpd.read_file('./point_unique_geometry.geojson')
 connections = get_all_connections(roads=roads, points=points_unique_geometry)
@@ -161,8 +158,8 @@ def plot_path_loop(connections, paths, points):
 def plot_loop(new_connections, points):
     f, ax = plt.subplots()
     new_connections.plot(ax=ax)
-    for k, v in points.iterrows():
-        plt.annotate(s=k, xy=v.geometry.coords[:][0], fontsize = 10)
+    # for k, v in points.iterrows():
+    #     plt.annotate(s=k, xy=v.geometry.coords[:][0], fontsize = 10)
     # roads.loc[roads_to_plot].to_file('~/PycharmProjects/Maxus/Warmtenet/data/loops_district/output_cut_network.geojson', driver='GeoJSON')
     points.plot(ax=ax, color='r')
     plt.show()
@@ -196,8 +193,8 @@ def plot_paths(paths: dict, connections, points, losing_points):
     f, ax = plt.subplots(1,2)
     points.plot(ax=ax[0], alpha=0.2, color ='grey')
     connections.plot(ax=ax[0], color='grey', alpha=0.5)
-    for k, v in points.iterrows():
-        plt.annotate(s=k, xy=v.geometry.coords[:][0], fontsize = 10)
+    # for k, v in points.iterrows():
+    #     plt.annotate(s=k, xy=v.geometry.coords[:][0], fontsize = 10)
     for k, path in paths.items():
         points.loc[path].plot(ax=ax[0])
     points.plot(ax=ax[1], alpha=0.2, color ='grey')
@@ -317,11 +314,15 @@ while len(active_keys) > 0:
                             print('popping key because of junction, only one path can continue:', k, paths[k])
                             active_keys.remove(k)
 
+    if len(active_keys) == 0:
+        plot_paths(paths=paths, connections=new_connections, points=points_unique_geometry, losing_points=losing_points)
+        plt.show()
+
 f, ax = plt.subplots(1, 2)
 points_unique_geometry.plot(ax=ax[0])
 points_unique_geometry.loc[losing_points].plot(ax=ax[0], color='r')
 new_connections.plot(ax=ax[0])
-new_connections.plot(ax=ax[1])
+connections.plot(ax=ax[1])
 points_unique_geometry.plot(ax=ax[1], column=points_unique_geometry['income'], cmap='YlOrRd', legend=True, vmin=0, vmax=10000)
 plt.show()
 
