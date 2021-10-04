@@ -6,7 +6,6 @@ from shapely.geometry import MultiPoint, LineString, Point
 from utils import split_line_with_points
 
 
-
 def create_unique_points_and_merge_panden(points: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     """
 
@@ -71,6 +70,7 @@ def merge_buildings(points, price):
     income = gb.sum().warmtevraag * price
     income.name = 'income'
     geom = gb.first().geometry
+    st_gid = gb.st_gid_list.agg(lambda x: x.loc[x.str.len().idxmax()])
 
     return gpd.GeoDataFrame(pd.concat((income, st_gid, geom), axis=1), geometry='geometry')
 
@@ -193,12 +193,22 @@ def get_all_connections(roads: gpd.GeoDataFrame, points: gpd.GeoDataFrame) -> gp
     -------
 
     """
-    # todo: junctions should have st_gid's
-    # grouped_by_street = points.groupby('st_gid')
-    # long_roads_ids = list(grouped_by_street.filter(lambda x: len(x) > 2).st_gid.unique())
-    # long_roads = roads.loc[long_roads_ids]
-    long_roads = find_long_roads(roads=roads, points=points)
-    smaller_parts = split_long_roads(long_roads, roads=roads, points=points)
+    # method1 table entry based
+    points_in_streets = []
+    for st_gid in roads.st_gid:
+        points_in_str = []
+        for index, st_gid_list in points.st_gid_list.items():
+            if st_gid in st_gid_list:
+                points_in_str.append(index)
+        points_in_streets.append(points_in_str)
+    roads['pis'] = points_in_streets
+
+    long_roads = roads[roads.pis.apply(lambda x: len(x)) > 2][['pis']].to_dict()['pis']  # quicker but less solid
+
+    # method2 geometry based
+    long_roads2 = find_long_roads(roads=roads, points=points)
+
+    smaller_parts = split_long_roads(long_roads2, roads=roads, points=points)
 
     small_roads = roads.drop(axis=0, index=long_roads.keys())
     gdf_long_roads_split = gpd.GeoDataFrame(crs=roads.crs, geometry=smaller_parts)

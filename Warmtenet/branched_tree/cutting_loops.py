@@ -7,6 +7,7 @@ from branched_tree.network_functions import merge_buildings, create_unique_point
     get_all_connections, get_all_connected_points, store_connected_points_per_point
 from branched_tree.profit_functions import calculate_revenue
 import seaborn as shs
+import json
 shs.set_theme('paper')
 price = 55
 
@@ -22,8 +23,15 @@ for cell in all_points.id:
 
 junctions = all_points[kruispunten_mask]
 
+st_gids = []
+for index, row in junctions['straten'].items():
+    st_gids.append([street['streetid'] for street in json.loads(row)])
+junctions['st_gid_list'] = st_gids
+
+
 points_with_house = points_with_house_and_source[points_with_house_and_source['pandidentificatie'] != 'BRON']
 points_with_house.loc[:, 'pandidentificatie'] = [str(p[1:]) for p in points_with_house['pandidentificatie']]
+points_with_house_and_source['st_gid_list'] = [[st_gid] for st_gid in points_with_house_and_source.st_gid]
 
 # generate price for each house
 price_threshold = []
